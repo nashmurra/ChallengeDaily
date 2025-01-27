@@ -9,10 +9,18 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    var sfIcon: String
+    var iconTint: Color = .gray
+    var hint: String
+    //Hides TextField
+    var isPassword: Bool = false
+    @Binding var value: String
+    
+    
     var body: some View {
-        NavigationStack{
-            Login()
-        }
+        HStack(alignment: .top, spacing: 8, content: {
+            
+        })
     }
 }
 
