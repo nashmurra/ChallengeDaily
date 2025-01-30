@@ -25,12 +25,46 @@ struct Login: View {
                 .padding(.top, -5)
             
             VStack(spacing: 25) {
+                //Custom Text Fields
+                CustomTF(sfIcon: "at", hint: "Email ID", value: $emailID)
                 
+                CustomTF(sfIcon: "lock", hint: "Password", isPassword: true, value: $password)
+                    .padding(.top, 5)
+                
+                Button("Forgot Password") {
+                    
+                }
+                .font(.callout)
+                .fontWeight(.heavy)
+                .tint(.orange)
+                .hSpacing(.trailing)
+                
+                // Login Button
+                GradientButton(title: "Login", icon: "arrow.right") {
+                    
+                }
+                .hSpacing(.trailing)
+                .disableWithOpacity(emailID.isEmpty || password.isEmpty)
             }
             .padding(.top, 20)
             
             Spacer(minLength: 0)
+            
+            HStack(spacing: 6) {
+                Text("Don't have an account?")
+                    .foregroundStyle(.gray)
+                Button("SignUp") {
+                    
+                }
+                .fontWeight(.bold)
+                .tint(.orange)
+            }
+            .font(.callout)
+            .hSpacing()
         })
+        .padding(.vertical, 15)
+        .padding(.horizontal, 25)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 
