@@ -36,7 +36,7 @@ struct Login: View {
                 }
                 .font(.callout)
                 .fontWeight(.heavy)
-                .tint(.orange)
+                .tint(.teal)
                 .hSpacing(.trailing)
                 
                 // Login Button
@@ -57,7 +57,7 @@ struct Login: View {
                     
                 }
                 .fontWeight(.bold)
-                .tint(.orange)
+                .tint(.teal)
             }
             .font(.callout)
             .hSpacing()
