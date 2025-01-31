@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct Login: View {
+    @Binding var showSignup: Bool
+    // View Properties
     @State private var emailID: String = ""
     @State private var password: String = ""
     var body: some View {
@@ -54,7 +56,7 @@ struct Login: View {
                 Text("Don't have an account?")
                     .foregroundStyle(.gray)
                 Button("SignUp") {
-                    
+                    showSignup.toggle()
                 }
                 .fontWeight(.bold)
                 .tint(.teal)
