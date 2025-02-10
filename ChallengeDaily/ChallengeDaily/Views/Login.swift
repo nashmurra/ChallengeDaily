@@ -73,12 +73,21 @@ struct Login: View {
         .sheet(isPresented: $showForgotPasswordView, content: {
             if #available(iOS 16.4, *) {
                 ForgotPassword(showResetView: $showResetView)
-                    .presentationDetents([.height(200)])
+                    .presentationDetents([.height(300)])
                     .presentationCornerRadius(30)
             } else {
                 ForgotPassword(showResetView: $showResetView)
-                    .presentationDetents([.height(200)])
+                    .presentationDetents([.height(300)])
             }
+        })
+        .sheet(isPresented: $showForgotPasswordView, content: {
+            if #available(iOS 16.4, *) {
+                PasswordResetView()
+                    .presentationDetents([.height(350)])
+                    .presentationCornerRadius(30)
+            } else {
+                PasswordResetView()
+                    .presentationDetents([.height(350)])            }
         })
     }
 }
