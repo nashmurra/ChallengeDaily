@@ -12,6 +12,7 @@ struct ContentView: View {
     // View Properities
     @State private var showSignup: Bool = false
     var body: some View {
+        /*
         NavigationStack {
             Login(showSignup: $showSignup)
                 .navigationDestination(isPresented: $showSignup) {
@@ -27,6 +28,8 @@ struct ContentView: View {
                     .animation(.easeInOut(duration: 0.3), value: showSignup)
             }
         }
+         */
+        AuthView()
     }
     
     // Moving Blurred Background

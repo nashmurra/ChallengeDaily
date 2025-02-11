@@ -1,17 +1,17 @@
 //
-//  LoginView.swift
+//  SignupView.swift
 //  ChallengeDaily
 //
-//  Created by Jonathan on 2/4/25.
+//  Created by Jonathan on 2/11/25.
 //
 
 import SwiftUI
 
-struct LoginView: View {
-    @Binding var currentViewShowing: String
-    
+struct SignupView: View {
     @State private var email: String = ""
     @State private var password: String = ""
+    
+    @Binding var currentViewShowing: String
     
     private func isValidPassword(_ password: String) -> Bool {
         //minimum 6 characters long
@@ -26,11 +26,12 @@ struct LoginView: View {
     
     var body: some View {
         ZStack {
-            Color.white.edgesIgnoringSafeArea(.all)
+            Color.black.edgesIgnoringSafeArea(.all)
             
             VStack{
                 HStack {
-                    Text("Welcome Back!")
+                    Text("Create an Account!")
+                        .foregroundColor(.white)
                         .font(.largeTitle)
                         .bold()
                     
@@ -54,11 +55,12 @@ struct LoginView: View {
                     }
                     
                 }
+                .foregroundColor(.white)
                 .padding()
                 .overlay {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(lineWidth: 2)
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                 }
                 
                 .padding()
@@ -76,11 +78,12 @@ struct LoginView: View {
                     }
                     
                 }
+                .foregroundColor(.white)
                 .padding()
                 .overlay {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(lineWidth: 2)
-                        .foregroundColor(.black)
+                        .foregroundColor(.white)
                 }
                 
                 .padding()
@@ -88,12 +91,12 @@ struct LoginView: View {
                 Button(action: {
                     
                     withAnimation {
-                        self.currentViewShowing = "signup"
+                        self.currentViewShowing = "login"
                     }
                     
                 }) {
-                    Text("Don't have an account?")
-                        .foregroundColor(.black.opacity((0.7)))
+                    Text("Already have an account?")
+                        .foregroundColor(.gray)
                 }
                 
                 Spacer()
@@ -102,8 +105,8 @@ struct LoginView: View {
                 Button {
                     
                 } label: {
-                    Text("Sign In")
-                        .foregroundColor(.white)
+                    Text("Create New Account")
+                        .foregroundColor(.black)
                         .font(.title3)
                         .bold()
                     
@@ -112,7 +115,7 @@ struct LoginView: View {
                     
                         .background{
                             RoundedRectangle(cornerRadius: 10)
-                                .fill(Color.black)
+                                .fill(Color.white)
                         }
                         .padding(.horizontal)
                     
@@ -121,5 +124,3 @@ struct LoginView: View {
         }
     }
 }
-
-
