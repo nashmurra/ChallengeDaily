@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct LoginView: View {
     @Binding var currentViewShowing: String
+    @AppStorage("uid") var userID: String = ""
     
     @State private var email: String = ""
     @State private var password: String = ""
@@ -100,6 +102,20 @@ struct LoginView: View {
                 Spacer()
                 
                 Button {
+                    
+                    Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
+                        if let error = error {
+                            print(error)
+                            return
+                        }
+                        
+                        if let authResult = authResult {
+                            print(authResult.user.uid)
+                            withAnimation{
+                                userID = authResult.user.uid
+                            }
+                        }
+                    }
                     
                 } label: {
                     Text("Sign In")
