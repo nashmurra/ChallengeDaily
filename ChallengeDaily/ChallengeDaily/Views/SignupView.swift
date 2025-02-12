@@ -7,10 +7,13 @@
 
 import SwiftUI
 import FirebaseAuth
+import Firebase
+import FirebaseFirestore
 
 struct SignupView: View {
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var username: String = ""
     @AppStorage("uid") var userID: String = ""
     
     @Binding var currentViewShowing: String
@@ -90,6 +93,29 @@ struct SignupView: View {
                 
                 .padding()
                 
+                HStack{
+                    Image(systemName: "mail")
+                    TextField("Username", text: $username)
+                    
+                    Spacer()
+                    
+                    if (username.count != 0) {
+                        Image(systemName:"checkmark")
+                            .fontWeight(.bold)
+                            .foregroundColor(.green)
+                    }
+                    
+                }
+                .foregroundColor(.white)
+                .padding()
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(lineWidth: 2)
+                        .foregroundColor(.white)
+                }
+                
+                .padding()
+                
                 Button(action: {
                     
                     withAnimation {
@@ -118,6 +144,19 @@ struct SignupView: View {
                             print(authResult.user.uid)
                             userID = authResult.user.uid
                         }
+                        
+                        let db = Firestore.firestore()
+                                db.collection("users").document(userID).setData([
+                                    "username": username,
+                                    "email": email,
+                                    "createdAt": Timestamp()
+                                ]) { error in
+                                    if let error = error {
+                                        print("Error saving user data: \(error.localizedDescription)")
+                                    } else {
+                                        print("User data saved successfully!")
+                                    }
+                                }
                         
                     }
                     
