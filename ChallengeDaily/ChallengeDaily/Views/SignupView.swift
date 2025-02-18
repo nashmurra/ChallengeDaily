@@ -131,51 +131,45 @@ struct SignupView: View {
                 Spacer()
                 
                 Button {
-                    
-                    
                     Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-                       
                         if let error = error {
-                            print(error)
+                            print("Error creating user: \(error.localizedDescription)")
                             return
                         }
                         
-                        if let authResult = authResult {
-                            print(authResult.user.uid)
-                            userID = authResult.user.uid
-                        }
+                        guard let authResult = authResult else { return }
+                        
+                        let newUserID = authResult.user.uid
+                        userID = newUserID  // Save userID in AppStorage
                         
                         let db = Firestore.firestore()
-                                db.collection("users").document(userID).setData([
-                                    "username": username,
-                                    "email": email,
-                                    "createdAt": Timestamp()
-                                ]) { error in
-                                    if let error = error {
-                                        print("Error saving user data: \(error.localizedDescription)")
-                                    } else {
-                                        print("User data saved successfully!")
-                                    }
-                                }
-                        
+                        db.collection("users").addDocument(data: [
+                            "userID": newUserID,  // Store the auth user ID
+                            "username": username,
+                            "email": email,
+                            "createdAt": Timestamp()
+                        ]) { error in
+                            if let error = error {
+                                print("Error creating user document: \(error.localizedDescription)")
+                            } else {
+                                print("User document created successfully!")
+                            }
+                        }
                     }
-                    
                 } label: {
                     Text("Create New Account")
                         .foregroundColor(.black)
                         .font(.title3)
                         .bold()
-                    
                         .frame(maxWidth: .infinity)
                         .padding()
-                    
                         .background{
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color.white)
                         }
                         .padding(.horizontal)
-                    
                 }
+
             }
         }
     }
