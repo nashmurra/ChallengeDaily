@@ -19,7 +19,7 @@ struct ContentView: View {
         if userID == ""{
             AuthView()
         } else {
-            ProfileView()
+            MainView()
                 .preferredColorScheme(.dark)
                 .transition(.move(edge: .bottom))
         }
