@@ -13,52 +13,71 @@ struct ProfileView: View {
     @AppStorage("uid") var userID: String = ""
     
     var body: some View {
-        ZStack{
+        ZStack {
             Color.black.edgesIgnoringSafeArea(.all)
             
             VStack {
-                HStack {
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .frame(width: 100, height: 100)
-
-                }
-                .padding()
-                .padding(.top)
                 
+                Spacer().frame(height: 20) // Pushes the image down slightly
                 
-                VStack {
-                    Text("Username: \(userViewModel.username)")
-                        .foregroundColor(.white)
-                    Text("Email: \(userViewModel.email)")
-                        .foregroundColor(.white)
-                }
-                .onAppear {
-                    userViewModel.fetchCurrentUser()
-                }
-                Text("Logged In! \nYour user id is \(userID)")
+                Image(systemName: "person.crop.circle.fill")
+                    .resizable()
+                    .frame(width: 100, height: 100)
+                
+                Text("\(userViewModel.username)")
                     .foregroundColor(.white)
+                    .fontWeight(.bold)
+                    .font(.title2)
+                    .onAppear() {
+                        userViewModel.fetchCurrentUser()
+                    }
                 
-                Button(action: {
-                    
-                    let firebaseAuth = Auth.auth()
-                    do {
-                        try firebaseAuth.signOut()
-                        withAnimation{
-                            userID = ""
+                Text("\(userViewModel.email)")
+                    .foregroundColor(.white)
+                    .fontWeight(.semibold)
+                    .font(.title3)
+                
+                
+
+                Spacer()
+                
+                Text("Logged In!")
+                    .foregroundColor(.white)
+                    .font(.title2)
+                
+                HStack{
+                    Button(action: {
+                        let firebaseAuth = Auth.auth()
+                        do {
+                            try firebaseAuth.signOut()
+                            withAnimation {
+                                userID = ""
+                            }
+                        } catch let signOutError as NSError {
+                            print("Error signing out: %@", signOutError)
                         }
-                    } catch let signOutError as NSError {
-                        print("Error signing out: %@", signOutError)
+                    }) {
+                        Text("Sign Out")
+                            .foregroundColor(.white)
                     }
                     
-                }) {
-                    Text("Sign Out")
+                }
+                .foregroundColor(.black)
+                .padding()
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(lineWidth: 2)
                         .foregroundColor(.white)
                 }
+                
+                
+                
+                Spacer() // Keeps content balanced
             }
         }
     }
 }
+
 
 #Preview {
     ProfileView()
