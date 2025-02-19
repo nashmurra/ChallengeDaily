@@ -15,7 +15,6 @@ struct ContentView: View {
     // View Properities
     @State private var showSignup: Bool = false
     var body: some View {
-        
         if userID == ""{
             AuthView()
         } else {
