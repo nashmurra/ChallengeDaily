@@ -1,23 +1,16 @@
-//
-//  ProfileView.swift
-//  ChallengeDaily
-//
-//  Created by Jonathan on 2/18/25.
-//
-
 import SwiftUI
 import FirebaseAuth
 
 struct ProfileView: View {
     @StateObject var userViewModel = UserViewModel()
     @AppStorage("uid") var userID: String = ""
-    
+    @Environment(\.presentationMode) var presentationMode // Allows navigation back
+
     var body: some View {
         ZStack {
             Color.black.edgesIgnoringSafeArea(.all)
             
             VStack {
-                
                 Spacer().frame(height: 20) // Pushes the image down slightly
                 
                 Image(systemName: "person.crop.circle.fill")
@@ -28,7 +21,7 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .fontWeight(.bold)
                     .font(.title2)
-                    .onAppear() {
+                    .onAppear {
                         userViewModel.fetchCurrentUser()
                     }
                 
@@ -36,8 +29,6 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .fontWeight(.semibold)
                     .font(.title3)
-                
-                
 
                 Spacer()
                 
@@ -45,7 +36,7 @@ struct ProfileView: View {
                     .foregroundColor(.white)
                     .font(.title2)
                 
-                HStack{
+                HStack {
                     Button(action: {
                         let firebaseAuth = Auth.auth()
                         do {
@@ -60,7 +51,6 @@ struct ProfileView: View {
                         Text("Sign Out")
                             .foregroundColor(.white)
                     }
-                    
                 }
                 .foregroundColor(.black)
                 .padding()
@@ -69,16 +59,25 @@ struct ProfileView: View {
                         .stroke(lineWidth: 2)
                         .foregroundColor(.white)
                 }
-                
-                
-                
+
                 Spacer() // Keeps content balanced
             }
         }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss() // Navigate back
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.white)
+                        Text("")
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+        }
     }
-}
-
-
-#Preview {
-    ProfileView()
 }

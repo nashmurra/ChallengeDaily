@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct MainView: View {
-    @State private var showProfile = false // State to control navigation
+    @State private var showProfile = false // Controls ProfileView navigation
+    @State private var showSocial = false  // Controls SocialView navigation
 
     var body: some View {
         NavigationStack {
@@ -11,7 +12,7 @@ struct MainView: View {
                 ZStack {
                     HStack {
                         Button(action: {
-                            print("Friend button tapped")
+                            showSocial = true // Navigate to SocialView
                         }) {
                             Image(systemName: "person.2.fill")
                                 .resizable()
@@ -31,7 +32,7 @@ struct MainView: View {
                         Spacer()
 
                         Button(action: {
-                            showProfile = true // Trigger navigation
+                            showProfile = true // Navigate to ProfileView
                         }) {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
@@ -47,11 +48,9 @@ struct MainView: View {
             .navigationDestination(isPresented: $showProfile) {
                 ProfileView()
             }
+            .navigationDestination(isPresented: $showSocial) {
+                SocialView()
+            }
         }
     }
-}
-
-
-#Preview {
-    MainView()
 }
