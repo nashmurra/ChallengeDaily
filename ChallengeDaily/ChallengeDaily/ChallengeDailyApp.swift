@@ -13,7 +13,10 @@ import FirebaseCore
 struct ChallengeDailyApp: App {
     
     init() {
+        
+   // #if !DEBUG
         FirebaseApp.configure()
+    //#endif
     }
     
     var sharedModelContainer: ModelContainer = {

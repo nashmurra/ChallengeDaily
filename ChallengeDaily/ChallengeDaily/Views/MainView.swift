@@ -44,7 +44,7 @@ struct MainView: View {
                         .padding()
                 }
                 .frame(maxWidth: .infinity)
-                .padding()
+                //.padding()
                 .background(
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(lineWidth: 2)
