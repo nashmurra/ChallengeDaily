@@ -16,28 +16,31 @@ struct SplashScreenView: View {
         if isActive {
             ContentView()
         } else {
-            VStack {
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
                 VStack {
-                    Image(systemName: "hare.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.red)
-                    Text("Today's Challenge")
-                        .font(Font.custom("Baskerville-Bold", size: 26))
-                        .foregroundColor(.black.opacity(0.80))
-                }
-                .scaleEffect(size)
-                .opacity(opacity)
-                .onAppear {
-                    withAnimation(.easeIn(duration: 1.2)) {
-                        self.size = 0.9
-                        self.opacity = 1.0
+                    VStack {
+                        Image(systemName: "hare.fill")
+                            .font(.system(size: 80))
+                            .foregroundColor(.red)
+                        Text("Today's Challenge")
+                            .font(Font.custom("Baskerville-Bold", size: 26))
+                            .foregroundColor(.white.opacity(0.80))
+                    }
+                    .scaleEffect(size)
+                    .opacity(opacity)
+                    .onAppear {
+                        withAnimation(.easeIn(duration: 1.2)) {
+                            self.size = 0.9
+                            self.opacity = 1.0
+                        }
                     }
                 }
-            }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    withAnimation {
-                        self.isActive = true
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation {
+                            self.isActive = true
+                        }
                     }
                 }
             }

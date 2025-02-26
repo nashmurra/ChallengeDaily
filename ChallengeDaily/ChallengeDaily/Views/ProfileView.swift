@@ -7,132 +7,112 @@ struct ProfileView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        VStack(alignment: .leading) {
+        VStack {
             headerView
-            actionButtons
             userInfoDetails
-            
+            //actionButtons
             Spacer()
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss() // Navigate back
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.white)
+                        Text("")
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                }) {
+                    Image(systemName: "ellipsis.circle")
+                        .foregroundColor(.white)
+                        .font(.title)
+                }
+            }
+        }
     }
 }
 
 extension ProfileView {
-    
     var headerView: some View {
-        ZStack(alignment: .bottomLeading) {
-            Color(.purple)
-                .ignoresSafeArea()
-            
-            VStack {
-                Button {
-                    presentationMode.wrappedValue.dismiss()
-                } label: {
-                    Image(systemName: "arrow.left")
-                        .resizable()
-                        .frame(width: 20, height: 16)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .offset(x: 24, y: 12)
-                }
+        VStack {
+            ZStack {
                 Circle()
+                    .fill(Color.gray.opacity(0.3))
                     .frame(width: 100, height: 100)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .offset(y: 24)
+                    .overlay(
+                        Image("thanos")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .clipShape(Circle())
+                    )
                 
+                Button(action: {
+                }) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(8)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                }
+                .offset(x: 30, y: 30)
             }
-        }
-        .frame(height: 96)
-    }
-    
-    var actionButtons: some View {
-        HStack {
-            Spacer()
-            
-            Button {
-                
-            } label: {
-                Text("Edit Profile")
-                    .font(.subheadline.bold())
-                    .frame(width: 120, height: 32)
-                    .foregroundColor(.white)
-                    .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.gray, lineWidth: 0.75))
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .offset(x: 0, y: 15)
-            }
-            
-            Image(systemName: "bell.badge")
-                .font(.title)
-                .overlay(Circle().stroke(Color.gray, lineWidth: 0.75).padding(-3))
-                .frame(maxWidth: .infinity, alignment: .topTrailing)
-                .offset(x: -12, y: 15)
+            .padding(.top, 0)
         }
     }
     
     var userInfoDetails: some View {
-        VStack(alignment: .center, spacing: 0) {
-            HStack {
-                Text("YoMama")
-                    .font(.title.bold())
-                
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundColor(Color(.systemBlue))
-            }
-            .offset(x: 10)
+        VStack(spacing: 0) {
+            Text("SigmaThanos")
+                .font(.title.bold())
+                .foregroundColor(.white)
             
-            Text("@JoeMama")
+            Text("@tanos")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            
+            Text("Goofy Goober")
                 .font(.subheadline)
                 .foregroundColor(.white)
-                .offset(x: -3)
-            
-            Text("He/Her flag")
-                .font(.subheadline)
-            
-            HStack(spacing: 24) {
-                HStack {
-                    Image(systemName: "mappin.and.ellipse")
-                    
-                    Text("Moms house, OH")
-                }
-                
-                HStack {
-                    Image(systemName: "link")
-                    
-                    Text("www.yomamma.com")
-                }
-            }
-            .font(.caption)
-            .foregroundColor(.gray)
-            
-            HStack(spacing: 24) {
-                HStack(spacing: 4) {
-                    Text("307")
-                        .font(.subheadline)
-                        .bold()
-                    
-                    Text("Following")
-                        .font(.caption)
-                }
-                
-                HStack(spacing: 4) {
-                    Text("6.9M")
-                        .font(.subheadline)
-                        .bold()
-                    
-                    Text("Followers")
-                        .font(.caption)
-                }
-            }
-            .padding(.vertical)
-            
-            .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 6)
         }
-        .padding(.horizontal)
-        
     }
 }
+
+    
+//    var actionButtons: some View {
+//        HStack() {
+//            Button(action: {
+//                
+//            }) {
+//                Text("Edit Profile")
+//                    .font(.subheadline.bold())
+//                    .foregroundColor(.white)
+//                    .padding(.horizontal, 20)
+//                    .padding(.vertical, 5)
+//                    .overlay(
+//                        RoundedRectangle(cornerRadius: 20)
+//                            .stroke(Color.gray, lineWidth: 1)
+//                    )
+//            }
+//        }
+//        .padding(.top, 5)
+//    }
+//}
+
 
 
 //    @StateObject var userViewModel = UserViewModel()
