@@ -7,38 +7,67 @@ struct ProfileView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        VStack {
-            headerView
-            userInfoDetails
-            //actionButtons
-            Spacer()
-        }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss() // Navigate back
-                }) {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                        Text("")
-                            .foregroundColor(.white)
+        ZStack {
+            Color.black.edgesIgnoringSafeArea(.all)
+            VStack {
+                headerView
+                userInfoDetails
+                //actionButtons
+                Spacer()
+            }
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss() // Navigate back
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.white)
+                            Text("")
+                                .foregroundColor(.white)
+                        }
                     }
                 }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                }) {
-                    Image(systemName: "ellipsis.circle")
-                        .foregroundColor(.white)
-                        .font(.title)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(action: {
+                            let firebaseAuth = Auth.auth()
+                            do {
+                                try firebaseAuth.signOut()
+                                withAnimation {
+                                    userID = ""
+                                }
+                            } catch let signOutError as NSError {
+                                print("Error signing out: %@", signOutError)
+                            }
+                        }) {
+                            Text("Sign Out")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button(role: .destructive, action: {
+                            // Add account deletion logic here
+                        }) {
+                            HStack {
+                                Text("Delete Account")
+                                Image(systemName: "trash")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .foregroundColor(.white)
+                            .font(.title)
+                    }
                 }
+
             }
         }
     }
 }
+
+
 
 extension ProfileView {
     var headerView: some View {
@@ -56,6 +85,7 @@ extension ProfileView {
                     )
                 
                 Button(action: {
+                    // edit profile
                 }) {
                     Image(systemName: "pencil")
                         .font(.system(size: 14, weight: .bold))
@@ -88,15 +118,43 @@ extension ProfileView {
                 .font(.subheadline)
                 .foregroundColor(.white)
                 .padding(.top, 6)
+            
+            HStack {
+                Text("Followers")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.top, 6)
+                
+                Text("1.2M")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.top, 6)
+                
+                Spacer().frame(width: 40)
+                
+                Text("Following")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.top, 6)
+                
+                Text("10K")
+                    .font(.subheadline.bold())
+                    .foregroundColor(.white)
+                    .padding(.top, 6)
+            }
         }
     }
 }
 
-    
+#Preview {
+    ProfileView()
+}
+
+
 //    var actionButtons: some View {
 //        HStack() {
 //            Button(action: {
-//                
+//
 //            }) {
 //                Text("Edit Profile")
 //                    .font(.subheadline.bold())
