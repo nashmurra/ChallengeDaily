@@ -2,66 +2,53 @@ import SwiftUI
 import FirebaseAuth
 
 struct ProfileView: View {
+    @State private var showSettings = false
     @StateObject var userViewModel = UserViewModel()
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
-            VStack {
-                headerView
-                userInfoDetails
-                //actionButtons
-                Spacer()
-            }
-            .navigationBarBackButtonHidden(true)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss() // Navigate back
-                    }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
-                            Text("")
-                                .foregroundColor(.white)
-                        }
-                    }
+        NavigationStack {
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                VStack {
+                    headerView
+                    userInfoDetails
+                    //actionButtons
+                    Spacer()
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
+                .navigationBarBackButtonHidden(true)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
-                            let firebaseAuth = Auth.auth()
-                            do {
-                                try firebaseAuth.signOut()
-                                withAnimation {
-                                    userID = ""
-                                }
-                            } catch let signOutError as NSError {
-                                print("Error signing out: %@", signOutError)
-                            }
-                        }) {
-                            Text("Sign Out")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button(role: .destructive, action: {
-                            // Add account deletion logic here
+                            presentationMode.wrappedValue.dismiss() // Navigate back
                         }) {
                             HStack {
-                                Text("Delete Account")
-                                Image(systemName: "trash")
+                                Image(systemName: "chevron.left")
+                                    .foregroundColor(.white)
+                                Text("")
+                                    .foregroundColor(.white)
                             }
                         }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .foregroundColor(.white)
-                            .font(.title)
                     }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            showSettings = true
+                        }) {
+                            HStack {
+                                Image(systemName: "ellipsis")
+                                    .foregroundColor(.white)
+                                Text("")
+                                    .foregroundColor(.white)
+                            }
+                        }
+                    }
+                    
                 }
-
+            }
+            .navigationDestination(isPresented: $showSettings) {
+                SettingsView()
             }
         }
     }
