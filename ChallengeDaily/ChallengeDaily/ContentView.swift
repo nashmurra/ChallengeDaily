@@ -18,12 +18,46 @@ struct ContentView: View {
         if userID == ""{
             AuthView()
         } else {
-            MainView()
-                .preferredColorScheme(.dark)
-                .transition(.move(edge: .bottom))
-        }
-        
-    }
+
+                    ZStack {
+                        // Tab View
+                        TabView {
+                            MainView()
+                                .tabItem {
+                                    Label("Home", systemImage: "house.fill")
+                                        .foregroundColor(Color.white)
+
+                                }
+                            
+                            FeedView()
+                                .tabItem {
+                                    Label("Feed", systemImage: "person.3.fill")
+                                }
+                            
+                        }
+                        
+                        // Floating Camera Button
+                        VStack {
+                            Spacer() // Push to the bottom
+                            Button(action: {
+                                print("Camera button tapped!")
+                                // Add your camera action here
+                            }) {
+                                Image(systemName: "camera.fill")
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .padding()
+                                    .background(Color.accentColor)
+                                    .foregroundColor(.black)
+                                    .clipShape(Circle())
+                                    .shadow(radius: 5)
+                            }
+                            .offset(y: -20) // Raise above the Tab Bar
+                        }
+                    }
+                    .preferredColorScheme(.dark) // Applies dark mode globally
+                }
+            }
     
 }
 

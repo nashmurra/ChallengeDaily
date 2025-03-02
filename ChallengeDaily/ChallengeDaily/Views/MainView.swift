@@ -3,12 +3,79 @@ import SwiftUI
 struct MainView: View {
     @State private var showProfile = false // Controls ProfileView navigation
     @State private var showSocial = false  // Controls SocialView navigation
+    @State private var showChallenge = false
+    @Namespace var namespace
+    @State var show = false
 
     var body: some View {
-        NavigationStack {
-            VStack {
-                Spacer().frame(height: 10)
+        ZStack(alignment: .top) { // Aligns overlay to the top
+            
+            Color.backgroundDark
+                .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer().frame(height: 80) // Space for the fixed header
 
+                    VStack {
+                        Spacer()
+                        
+                        VStack {
+                            Text("00:00")
+                                .font(.system(size: 50, weight: .heavy, design: .rounded)) // Custom size
+                            
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .textCase(.uppercase)
+                                .padding(60)
+                                .offset(y: 130)
+                            
+                            Text("Daily Challenge Countdown")
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .textCase(.uppercase)
+                                .padding(60)
+                                .offset(y: 0)
+                        }
+                        
+                        
+                            
+                    }
+                    .frame(height: 800)
+                    .background(
+                        RoundedRectangle(cornerRadius: 0, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [Color.pinkColor, Color.redColor]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+                    .padding(.top, -620)
+
+                    if !show {
+                        ChallengeItem(namespace: namespace, show: $show)
+                    } else {
+                        ChallengeView(namespace: namespace, show: $show)
+                    }
+
+                    VStack(spacing: 0) {
+                        FeedView()
+                        FeedView()
+                        FeedView()
+                        FeedView()
+                    }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize) // Less bouncy scrolling
+
+            
+
+            // Fixed header overlay
+            VStack {
+                Spacer().frame(height:80)
                 HStack {
                     Button(action: {
                         showSocial = true // Navigate to SocialView
@@ -20,9 +87,10 @@ struct MainView: View {
                     }
                     Spacer()
                     Text("Today's Challenge")
-                        .font(.title2)
+                        .font(.headline.weight(.semibold))
                         .foregroundColor(.white)
-                        .fontWeight(.black)
+                        .fontWeight(.medium)
+                        .textCase(.uppercase)
                     Spacer()
                     Button(action: {
                         showProfile = true // Navigate to ProfileView
@@ -34,31 +102,32 @@ struct MainView: View {
                     }
                 }
                 .padding(.horizontal)
-
-                Spacer().frame(height: 20) // Adjust spacing
-
-                VStack {
-                    Text("Daily Challenge")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .padding()
-                }
-                .frame(maxWidth: .infinity)
-                //.padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(lineWidth: 2)
-                        .foregroundColor(.white)
-                )
-
-                Spacer()
+                .frame(height: 60)
             }
-            .navigationDestination(isPresented: $showProfile) {
-                ProfileView()
-            }
-            .navigationDestination(isPresented: $showSocial) {
-                SocialView()
-            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .zIndex(1) // Ensures it stays on top
         }
+        .ignoresSafeArea(edges: .top)
     }
 }
+
+#Preview {
+    MainView()
+        .preferredColorScheme(.dark)
+}
+
+            
+            
+            /*
+             .navigationDestination(isPresented: $showProfile) {
+             ProfileView()
+             }
+             .navigationDestination(isPresented: $showSocial) {
+             SocialView()
+             }
+             }
+             }
+             
+             }
+             */
