@@ -18,14 +18,67 @@ struct SettingsView: View {
             ZStack {
                 Color.black.edgesIgnoringSafeArea(.all)
                 List {
-                    Section(header: Text("PROFILE")) {
+                    
+                    Section(header: Text("Features")) {
                         Button {
                         } label: {
-                            Text("LOGOUT")
-                                .foregroundColor(.red)
-                                .frame(maxWidth: .infinity, alignment: .center)
+                            Text("Past Challenges")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                        } label: {
+                            Text("Achievements")
+                                .foregroundColor(.white)
                         }
                     }
+                    
+                    Section(header: Text("Settings")) {
+                        Button {
+                        } label: {
+                            Text("Privacy")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                        } label: {
+                            Text("Time Zone")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                        } label: {
+                            Text("Notifications")
+                                .foregroundColor(.white)
+                        }
+                    }
+                    
+                    Section(header: Text("About")) {
+                        Button {
+                        } label: {
+                            Text("Share")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                        } label: {
+                            Text("About")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                        } label: {
+                            Text("Rate")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button {
+                        } label: {
+                            Text("Help")
+                                .foregroundColor(.white)
+                        }
+                    }
+                    
                     Section() {
                         Button(action: {
                             let firebaseAuth = Auth.auth()
@@ -38,8 +91,9 @@ struct SettingsView: View {
                                 print("Error signing out: %@", signOutError)
                             }
                         }) {
-                            Text("LOGOUT")
+                            Text("LOG OUT")
                                 .foregroundColor(.red)
+                                .fontWeight(.heavy)
                                 .frame(maxWidth: .infinity, alignment: .center)
                         }
                     }
