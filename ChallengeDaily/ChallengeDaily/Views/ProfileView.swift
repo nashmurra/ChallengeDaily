@@ -14,7 +14,6 @@ struct ProfileView: View {
                 VStack {
                     headerView
                     userInfoDetails
-                    //actionButtons
                     Spacer()
                 }
                 .navigationBarBackButtonHidden(true)
