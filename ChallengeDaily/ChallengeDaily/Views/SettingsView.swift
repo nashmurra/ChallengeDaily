@@ -12,6 +12,8 @@ struct SettingsView: View {
     @StateObject var userViewModel = UserViewModel()
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
+    @State private var showPastChallenges = false
+    @State private var showAchievements = false
     
     var body: some View {
         NavigationView {
@@ -20,14 +22,16 @@ struct SettingsView: View {
                 List {
                     
                     Section(header: Text("Features")) {
-                        Button {
-                        } label: {
+                        Button (action: {
+                            showPastChallenges = true
+                        }) {
                             Text("Past Challenges")
                                 .foregroundColor(.white)
                         }
                         
-                        Button {
-                        } label: {
+                        Button (action: {
+                            showAchievements = true
+                        }) {
                             Text("Achievements")
                                 .foregroundColor(.white)
                         }
@@ -72,11 +76,6 @@ struct SettingsView: View {
                                 .foregroundColor(.white)
                         }
                         
-                        Button {
-                        } label: {
-                            Text("Help")
-                                .foregroundColor(.white)
-                        }
                     }
                     
                     Section() {
@@ -100,6 +99,12 @@ struct SettingsView: View {
                 }
                 .listStyle(GroupedListStyle())
                 .navigationTitle("Settings")
+            }
+            .navigationDestination(isPresented: $showPastChallenges) {
+                PastChallengesView()
+            }
+            .navigationDestination(isPresented: $showAchievements) {
+                AchievementsView()
             }
         }
         .navigationBarBackButtonHidden(true)
