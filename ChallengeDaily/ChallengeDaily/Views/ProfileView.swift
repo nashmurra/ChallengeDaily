@@ -1,12 +1,18 @@
 import SwiftUI
 import FirebaseAuth
+import FirebaseFirestore
 
 struct ProfileView: View {
     @State private var showSettings = false
-    @StateObject var userViewModel = UserViewModel()
+    @State private var showProfilePhoto = false
+    @State private var profileImage: UIImage?
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
-    
+
+    // Add state variables for username and email
+    @State private var username: String = ""
+    @State private var email: String = ""
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -43,60 +49,122 @@ struct ProfileView: View {
                             }
                         }
                     }
-                    
                 }
             }
             .navigationDestination(isPresented: $showSettings) {
                 SettingsView()
             }
+            .navigationDestination(isPresented: $showProfilePhoto) {
+                ProfilePhotoSelectorView(profileImage: $profileImage, userID: userID)
+            }
+            .onAppear {
+                fetchProfileImage() // Fetch the profile image
+                fetchUserData()    // Fetch the user's data (username and email)
+            }
+        }
+    }
+
+    // Fetch user data (username and email) from Firestore
+    func fetchUserData() {
+        let db = Firestore.firestore()
+        db.collection("users")
+            .whereField("userID", isEqualTo: userID)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("DEBUG: Failed to fetch user data: \(error.localizedDescription)")
+                    return
+                }
+
+                guard let document = snapshot?.documents.first else {
+                    print("DEBUG: No user data found")
+                    return
+                }
+
+                let data = document.data()
+                self.username = data["username"] as? String ?? "Unknown"
+                self.email = data["email"] as? String ?? "No email"
+            }
+    }
+
+    // Fetch profile image from Firestore
+    func fetchProfileImage() {
+        let db = Firestore.firestore()
+        db.collection("users").document(userID).getDocument { snapshot, error in
+            if let error = error {
+                print("DEBUG: Failed to fetch profile image: \(error.localizedDescription)")
+                return
+            }
+
+            guard let data = snapshot?.data(),
+                  let base64String = data["profileImage"] as? String,
+                  let imageData = Data(base64Encoded: base64String),
+                  let image = UIImage(data: imageData) else {
+                print("DEBUG: No profile image found or failed to decode")
+                return
+            }
+
+            DispatchQueue.main.async {
+                self.profileImage = image
+            }
         }
     }
 }
 
-
-
 extension ProfileView {
     var headerView: some View {
-        VStack {
-            ZStack {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 100, height: 100)
-                    .overlay(
-                        Image("thanos")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
-                    )
-                
-                Button(action: {
-                    // edit profile
-                }) {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.black)
-                        .padding(8)
-                        .background(Color.white)
-                        .clipShape(Circle())
+        NavigationStack {
+            VStack {
+                ZStack {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 100, height: 100)
                         .overlay(
-                            Circle()
-                                .stroke(Color.white, lineWidth: 1)
+                            Group {
+                                if let profileImage = profileImage {
+                                    Image(uiImage: profileImage)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(Circle())
+                                } else {
+                                    Image("thanos")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(Circle())
+                                }
+                            }
                         )
+                    
+                    Button(action: {
+                        showProfilePhoto = true
+                    }) {
+                        Image(systemName: "pencil")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(8)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white, lineWidth: 1)
+                            )
+                    }
+                    .offset(x: 30, y: 30)
                 }
-                .offset(x: 30, y: 30)
             }
-            .padding(.top, 0)
         }
     }
     
     var userInfoDetails: some View {
         VStack(spacing: 0) {
-            Text("SigmaThanos")
+            // Display the username
+            Text(username) // Username from Firestore
                 .font(.title.bold())
                 .foregroundColor(.white)
             
-            Text("@tanos")
+            // Display the user ID after "@"
+            Text("@\(userID)") // User ID from @AppStorage
                 .font(.subheadline)
                 .foregroundColor(.gray)
             
