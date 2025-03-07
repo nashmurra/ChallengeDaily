@@ -5,6 +5,7 @@ import Combine
 class UserViewModel: ObservableObject {
     @Published var username: String = ""
     @Published var email: String = ""
+    private var tempUserSession: FirebaseAuth.User?
     
     func fetchCurrentUser() {
         guard let userID = Auth.auth().currentUser?.uid else { return }
