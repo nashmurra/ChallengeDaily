@@ -12,6 +12,7 @@ import PhotosUI
 
 struct ContentView: View {
     @AppStorage("uid") var userID: String = ""
+    //@Binding var currentViewShowing: String
     
     // View Properties
     @State private var showSignup: Bool = false
@@ -25,15 +26,19 @@ struct ContentView: View {
             ZStack {
                 // Tab View
                 TabView {
+                    
                     MainView()
+                        .preferredColorScheme(.dark)
                         .tabItem {
                             Label("Home", systemImage: "house.fill")
                         }
                     
-                    FeedView()
+                    AchievementsView()
+                        .preferredColorScheme(.dark)
                         .tabItem {
-                            Label("Feed", systemImage: "person.3.fill")
+                            Label("Achievements", systemImage: "star.fill")
                         }
+                    
                 }
                 
                 // Floating Camera Button
@@ -53,7 +58,7 @@ struct ContentView: View {
                             .resizable()
                             .frame(width: 20, height: 20)
                             .padding()
-                            .background(Color.green)  // Set button background to green
+                            .background(Color.whiteText)  // Set button background to green
                             .foregroundColor(.black)  // Set icon color to black
                             .clipShape(Circle())
                             .shadow(radius: 5)
@@ -109,6 +114,5 @@ struct CameraView: UIViewControllerRepresentable {
     }
 }
 
-#Preview {
-    ContentView()
-}
+
+
