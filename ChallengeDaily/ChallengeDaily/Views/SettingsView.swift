@@ -7,6 +7,7 @@
 
 import SwiftUI
 import FirebaseAuth
+import StoreKit
 
 struct SettingsView: View {
     @StateObject var userViewModel = UserViewModel()
@@ -59,6 +60,13 @@ struct SettingsView: View {
                     
                     Section(header: Text("About")) {
                         Button {
+                            let appURL = URL(string: "https://apps.apple.com/app/your-app-id")!
+                            let activityVC = UIActivityViewController(activityItems: [appURL], applicationActivities: nil)
+                            
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let rootVC = windowScene.windows.first?.rootViewController {
+                                rootVC.present(activityVC, animated: true, completion: nil)
+                            }
                         } label: {
                             Text("Share")
                                 .foregroundColor(.white)
@@ -71,6 +79,9 @@ struct SettingsView: View {
                         }
                         
                         Button {
+                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                                SKStoreReviewController.requestReview(in: scene)
+                            }
                         } label: {
                             Text("Rate")
                                 .foregroundColor(.white)
