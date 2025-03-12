@@ -14,9 +14,9 @@ struct ChallengeDailyApp: App {
     
     init() {
         
-   // #if !DEBUG
+        // #if !DEBUG
         FirebaseApp.configure()
-    //#endif
+        //#endif
     }
     
     var sharedModelContainer: ModelContainer = {
@@ -24,14 +24,14 @@ struct ChallengeDailyApp: App {
             Item.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-
+    
     var body: some Scene {
         WindowGroup {
             SplashScreenView()

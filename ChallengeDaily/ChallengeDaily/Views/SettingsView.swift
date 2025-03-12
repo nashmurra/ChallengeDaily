@@ -15,6 +15,7 @@ struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var showPastChallenges = false
     @State private var showAchievements = false
+    @State private var showPreferences = false
     
     var body: some View {
         NavigationView {
@@ -54,6 +55,13 @@ struct SettingsView: View {
                         Button {
                         } label: {
                             Text("Notifications")
+                                .foregroundColor(.white)
+                        }
+                        
+                        Button (action: {
+                            showPreferences = true
+                        }) {
+                            Text("Preferences")
                                 .foregroundColor(.white)
                         }
                     }
@@ -116,6 +124,9 @@ struct SettingsView: View {
             }
             .navigationDestination(isPresented: $showAchievements) {
                 AchievementsView()
+            }
+            .navigationDestination(isPresented: $showPreferences) {
+                PreferencesView()
             }
         }
         .navigationBarBackButtonHidden(true)
