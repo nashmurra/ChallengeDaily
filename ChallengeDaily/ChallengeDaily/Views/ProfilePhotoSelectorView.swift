@@ -14,7 +14,7 @@ struct ProfilePhotoSelectorView: View {
     @State private var selectedImage: UIImage?
     @State private var isUploading = false
     var userID: String
-    @Environment(\.presentationMode) var presentationMode // Add this line
+    @Environment(\.presentationMode) var presentationMode
 
     var body: some View {
         NavigationStack {
@@ -91,8 +91,8 @@ struct ProfilePhotoSelectorView: View {
                 print("DEBUG: Failed to save image to Firestore: \(error.localizedDescription)")
             } else {
                 print("DEBUG: Image saved to Firestore successfully")
-                profileImage = selectedImage // Update the profile image in the parent view
-                presentationMode.wrappedValue.dismiss() // Dismiss the view after saving
+                profileImage = selectedImage
+                presentationMode.wrappedValue.dismiss()
             }
         }
     }

@@ -9,7 +9,7 @@ import SwiftUI
 import FirebaseAuth
 import Firebase
 import FirebaseFirestore
-//import FirebaseAuth
+import FirebaseAuth
 
 struct SignupView: View {
     //@Binding var currentViewShowing: String
@@ -195,12 +195,16 @@ struct SignupView: View {
                             userID = newUserID  // Save userID in AppStorage
                             
                             let db = Firestore.firestore()
-                            db.collection("users").addDocument(data: [
-                                "userID": newUserID,  // Store the auth user ID
+                            db.collection("users").document(newUserID).setData([
+                                "userID": newUserID,
                                 "username": username,
                                 "email": email,
-                                "createdAt": Timestamp()
-                            ]) { error in
+                                "createdAt": Timestamp(),
+                                "darkMode": false,  // Default settings
+                                "privateAccount": false,
+                                "contentFilter": "Everyone",
+                                "profileImage": ""  // Placeholder for profile picture
+                            ], merge: true) { error in
                                 if let error = error {
                                     print("Error creating user document: \(error.localizedDescription)")
                                 } else {
@@ -287,6 +291,3 @@ struct SignupView: View {
     
     
 }
-
-
-

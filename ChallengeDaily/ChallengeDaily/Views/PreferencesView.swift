@@ -85,6 +85,7 @@ struct PreferencesView: View {
         db.collection("users").document(userID).setData([key: value], merge: true)
     }
 
+
     func loadPreferences() {
         guard !userID.isEmpty else { return }
         db.collection("users").document(userID).getDocument { snapshot, error in
@@ -96,13 +97,6 @@ struct PreferencesView: View {
         }
     }
 }
-
-
-
-
-
-
-
 
 #Preview {
     PreferencesView()
