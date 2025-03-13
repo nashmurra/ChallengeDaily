@@ -2,26 +2,20 @@ import SwiftUI
 
 struct MainView: View {
     @State private var showProfile = false
-        @State private var showSocial = false
-        @State private var timeRemaining = 0
-        @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
-        @State private var currentChallenge: Challenge?
-        @Namespace var namespace
-        @State var show = false
+    @State private var showSocial = false
+    @State private var timeRemaining = 0
+    @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
+    @Namespace var namespace
+    @State var show = false
 
-        let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
-        // Explicit Public Initializer
-        init() {}
-    
-    
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
                 Color.backgroundDark
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 0) {
                         Spacer().frame(height: 80)
@@ -60,13 +54,14 @@ struct MainView: View {
                         .padding(.top, -620)
 
                         if !show {
-                            if let currentChallenge = currentChallenge {
-                                    // Print instructions before rendering the view
-                                var title = currentChallenge.title
+                            if let currentChallenge = currentChallengeViewmodel.currentChallenge {
+                                ChallengeItem(namespace: namespace, show: $show, currentChallange: currentChallenge)
                             }
-                            ChallengeItem(namespace: namespace, show: $show)
+                            
                         } else {
-                            ChallengeView(namespace: namespace, show: $show)
+                            if let currentChallenge = currentChallengeViewmodel.currentChallenge {
+                                ChallengeView(namespace: namespace, show: $show, currentChallange: currentChallenge)
+                            }
                         }
 
                         VStack(spacing: 0) {
@@ -78,7 +73,7 @@ struct MainView: View {
                     }
                 }
                 .scrollBounceBehavior(.basedOnSize)
-                
+
                 VStack {
                     Spacer().frame(height: 80)
                     HStack {
@@ -94,7 +89,6 @@ struct MainView: View {
                         Text("Today's Challenge")
                             .font(.headline.weight(.semibold))
                             .foregroundColor(.white)
-                            .fontWeight(.medium)
                             .textCase(.uppercase)
                         Spacer()
                         Button(action: {
@@ -122,6 +116,7 @@ struct MainView: View {
             }
             .onAppear {
                 updateCountdown()
+                currentChallengeViewmodel.fetchDailyChallenges()
             }
             .onReceive(timer) { _ in
                 if timeRemaining > 0 {
@@ -130,19 +125,9 @@ struct MainView: View {
                     updateCountdown()
                 }
             }
-            .onAppear {
-                currentChallengeViewmodel.fetchDailyChallenges()  // Fetch challenges first
-
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { // Delay to wait for data
-                    if let challenge = currentChallengeViewmodel.dailyChallenges.randomElement() {
-                        currentChallenge = challenge
-                        
-                    } else {
-                        print("No challenges available")
-                    }
-                }
+            .onReceive(currentChallengeViewmodel.$currentChallenge) { _ in
+                // Triggers UI update when challenge updates
             }
-
         }
     }
 
@@ -155,7 +140,6 @@ struct MainView: View {
         components.minute = 0
         components.second = 0
 
-        // Convert Eastern Time to UTC
         let timezone = TimeZone(identifier: "America/New_York") ?? TimeZone.current
         let offset = timezone.secondsFromGMT()
         let utcResetDate = calendar.date(from: components)?.addingTimeInterval(TimeInterval(-offset))

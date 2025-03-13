@@ -4,6 +4,7 @@ struct ChallengeView: View {
     
     var namespace: Namespace.ID
     @Binding var show: Bool
+    var currentChallange: Challenge
     
     var body: some View {
         VStack {
@@ -15,7 +16,7 @@ struct ChallengeView: View {
                     .matchedGeometryEffect(id: "subtitle", in: namespace)
                     .frame(maxWidth: .infinity, alignment: .center)
                 
-                Text("Psychic or Psycho?")
+                Text(currentChallange.title)
                     .font(.title.weight(.bold))
                     .matchedGeometryEffect(id: "title", in: namespace)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -31,15 +32,22 @@ struct ChallengeView: View {
                         .padding(8)
                         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     
-                    Text("Idea by Jonathan Krolak")
+                    Text("Idea by \(currentChallange.creator)")
                         .font(.footnote)
                     
                     Spacer()
                 }
                 
-                Text("Walk up to a stranger and say 'I had a dream about this very moment' and then walk away.")
+                Text(currentChallange.instructions)
                     .font(.body)
                     .matchedGeometryEffect(id: "description", in: namespace)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                
+                //Spacer().frame(height: 20)
+                
+                Text("\(currentChallange.hint)")
+                    .font(.footnote)
+                    .matchedGeometryEffect(id: "hint", in: namespace)
                     .frame(maxWidth: .infinity, alignment: .center)
                 
                 Spacer()
@@ -76,10 +84,3 @@ struct ChallengeView: View {
     }
 }
 
-struct ChallengeView_Previews: PreviewProvider {
-    @Namespace static var namespace
-    
-    static var previews: some View {
-        ChallengeView(namespace: namespace, show: .constant(true))
-    }
-}

@@ -4,7 +4,8 @@ import Combine
 
 class ChallengeViewModel: ObservableObject {
     @Published var dailyChallenges: [Challenge] = []
-    
+    @Published var currentChallenge: Challenge? // This stores the active challenge
+
     func fetchDailyChallenges() {
         let db = Firestore.firestore()
         db.collection("challenges")
@@ -14,7 +15,7 @@ class ChallengeViewModel: ObservableObject {
                     print("Error fetching challenges: \(error.localizedDescription)")
                     return
                 }
-                
+
                 DispatchQueue.main.async {
                     self.dailyChallenges = snapshot?.documents.compactMap { doc in
                         let data = doc.data()
@@ -27,6 +28,9 @@ class ChallengeViewModel: ObservableObject {
                             hint: data["hint"] as? String ?? "No hint"
                         )
                     } ?? []
+
+                    // Pick a random challenge if available
+                    self.currentChallenge = self.dailyChallenges.randomElement()
                 }
             }
     }
