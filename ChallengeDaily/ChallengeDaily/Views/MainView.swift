@@ -2,12 +2,19 @@ import SwiftUI
 
 struct MainView: View {
     @State private var showProfile = false
-    @State private var showSocial = false
-    @State private var timeRemaining = 0
-    @Namespace var namespace
-    @State var show = false
+        @State private var showSocial = false
+        @State private var timeRemaining = 0
+        @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
+        @State private var currentChallenge: Challenge?
+        @Namespace var namespace
+        @State var show = false
 
-    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+        let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+        // Explicit Public Initializer
+        init() {}
+    
+    
 
     var body: some View {
         NavigationStack {
@@ -53,6 +60,10 @@ struct MainView: View {
                         .padding(.top, -620)
 
                         if !show {
+                            if let currentChallenge = currentChallenge {
+                                    // Print instructions before rendering the view
+                                var title = currentChallenge.title
+                            }
                             ChallengeItem(namespace: namespace, show: $show)
                         } else {
                             ChallengeView(namespace: namespace, show: $show)
@@ -119,6 +130,19 @@ struct MainView: View {
                     updateCountdown()
                 }
             }
+            .onAppear {
+                currentChallengeViewmodel.fetchDailyChallenges()  // Fetch challenges first
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { // Delay to wait for data
+                    if let challenge = currentChallengeViewmodel.dailyChallenges.randomElement() {
+                        currentChallenge = challenge
+                        
+                    } else {
+                        print("No challenges available")
+                    }
+                }
+            }
+
         }
     }
 
