@@ -18,7 +18,7 @@ struct PastChallengesView: View {
             VStack (spacing: 0) {
                 Text("Past Challenges")
                     .font(.title.bold())
-                ChallengeItem(namespace: namespace, show: $show)
+                //ChallengeItem(namespace: namespace, show: $show)
             }
             .frame(maxHeight: .infinity, alignment: .top)
         }

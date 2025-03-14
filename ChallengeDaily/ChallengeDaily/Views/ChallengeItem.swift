@@ -11,6 +11,7 @@ struct ChallengeItem: View {
     
     var namespace: Namespace.ID
     @Binding var show: Bool
+    var currentChallange: Challenge
     
     var body: some View {
         VStack {
@@ -20,7 +21,7 @@ struct ChallengeItem: View {
                     .matchedGeometryEffect(id: "subtitle", in: namespace)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
-                Text("Psychic or Psycho?")
+                Text(currentChallange.title)
                     .font(.title.weight(.bold))
                     .matchedGeometryEffect(id: "title", in: namespace)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -59,14 +60,4 @@ struct ChallengeItem: View {
     }
 }
 
-struct ChallengeItem_Previews: PreviewProvider {
 
-    @Namespace static var namespace
-    
-    static var previews: some View {
-        ChallengeItem(namespace: namespace, show: .constant(true))
-            .preferredColorScheme(.dark)
-    }
-    
-    
-}
