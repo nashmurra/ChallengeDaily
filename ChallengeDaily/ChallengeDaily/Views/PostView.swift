@@ -1,18 +1,47 @@
-//
-//  PostView.swift
-//  ChallengeDaily
-//
-//  Created by HPro2 on 3/13/25.
-//
-
 import SwiftUI
 
 struct PostView: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
+    var image: UIImage?
 
-#Preview {
-    PostView()
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Today's Challenge")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.top)
+
+            if let image = image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 300, height: 400)
+                                .background(Color.gray.opacity(0.3)) // Debug background
+                                .cornerRadius(10)
+            } else {
+                Text("❌ No Image Found")
+                    .foregroundColor(.red)
+                
+            }
+            
+            
+            Button(action: {
+                // Action for posting
+            }) {
+                HStack {
+                    Text("POST")
+                        .fontWeight(.bold)
+                    Image(systemName: "arrow.right")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+            }
+            .padding(.horizontal)
+
+            Spacer()
+        }
+        .padding()
+    }
 }

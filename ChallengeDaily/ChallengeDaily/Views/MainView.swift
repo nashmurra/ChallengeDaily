@@ -55,6 +55,7 @@ struct MainView: View {
 
                         if !show {
                             if let currentChallenge = currentChallengeViewmodel.currentChallenge {
+                                //ChallengeItem(namespace: namespace, show: $show, currentChallange: currentChallenge)
                                 ChallengeItem(namespace: namespace, show: $show, currentChallange: currentChallenge)
                             }
                             
@@ -65,10 +66,10 @@ struct MainView: View {
                         }
 
                         VStack(spacing: 0) {
-                            FeedView()
-                            FeedView()
-                            FeedView()
-                            FeedView()
+                            //FeedView()
+                            //FeedView()
+                            //FeedView()
+                            //FeedView()
                         }
                     }
                 }

@@ -12,64 +12,70 @@ import PhotosUI
 
 struct ContentView: View {
     @AppStorage("uid") var userID: String = ""
-    //@Binding var currentViewShowing: String
-    
-    // View Properties
-    @State private var showSignup: Bool = false
     @State private var showCamera: Bool = false
     @State private var selectedImage: UIImage? = nil
-    
+    @State private var showPostView: Bool = false
+
     var body: some View {
         if userID == "" {
             AuthView()
         } else {
+            
             ZStack {
-                // Tab View
                 TabView {
-                    
                     MainView()
-                        .preferredColorScheme(.dark)
                         .tabItem {
                             Label("Home", systemImage: "house.fill")
                         }
-                    
+
                     AchievementsView()
-                        .preferredColorScheme(.dark)
                         .tabItem {
                             Label("Achievements", systemImage: "star.fill")
                         }
-                    
                 }
-                
-                // Floating Camera Button
+
                 VStack {
-                    Spacer() // Push to the bottom
+                    Spacer()
                     Button(action: {
                         if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                            // Open Camera
                             showCamera = true
                         } else {
                             print("Camera not available")
                         }
-
-                        
                     }) {
                         Image(systemName: "plus")
                             .resizable()
                             .frame(width: 20, height: 20)
                             .padding()
-                            .background(Color.whiteText)  // Set button background to green
-                            .foregroundColor(.black)  // Set icon color to black
+                            .background(Color.white)
+                            .foregroundColor(.black)
                             .clipShape(Circle())
                             .shadow(radius: 5)
                     }
-                    .offset(y: -20) // Raise above the Tab Bar
+                    .offset(y: -20)
                 }
             }
             .sheet(isPresented: $showCamera) {
                 CameraView(selectedImage: $selectedImage)
+                    .onDisappear {
+                        print("📸 selectedImage after camera: \(String(describing: selectedImage))")
+                        if selectedImage != nil {
+                            DispatchQueue.main.async {
+                                showPostView = true
+                            }
+                        }
+                    }
             }
-            .preferredColorScheme(.dark) // Applies dark mode globally
+            .fullScreenCover(isPresented: Binding(
+                get: { showPostView && selectedImage != nil },
+                set: { showPostView = $0 }
+            )) {
+                if let image = selectedImage {
+                    PostView(image: image)
+                } else {
+                    Text("⚠️ No image available")
+                }
+            }
         }
     }
 }
@@ -101,10 +107,15 @@ struct CameraView: UIViewControllerRepresentable {
 
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
             if let image = info[.editedImage] as? UIImage {
+                print("✅ Captured edited image!")
                 parent.selectedImage = image
             } else if let image = info[.originalImage] as? UIImage {
+                print("✅ Captured original image!")
                 parent.selectedImage = image
+            } else {
+                print("❌ No image captured!")
             }
+            print("📸 selectedImage now: \(String(describing: parent.selectedImage))")
             parent.presentationMode.wrappedValue.dismiss()
         }
 
@@ -113,6 +124,4 @@ struct CameraView: UIViewControllerRepresentable {
         }
     }
 }
-
-
 
