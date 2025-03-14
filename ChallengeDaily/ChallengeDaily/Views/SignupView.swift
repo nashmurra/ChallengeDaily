@@ -200,10 +200,10 @@ struct SignupView: View {
                                 "username": username,
                                 "email": email,
                                 "createdAt": Timestamp(),
-                                "darkMode": false,  // Default settings
+                                "darkMode": false,
                                 "privateAccount": false,
                                 "contentFilter": "Everyone",
-                                "profileImage": ""  // Placeholder for profile picture
+                                "profileImage": "" 
                             ], merge: true) { error in
                                 if let error = error {
                                     print("Error creating user document: \(error.localizedDescription)")
