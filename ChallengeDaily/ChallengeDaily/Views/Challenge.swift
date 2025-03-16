@@ -9,6 +9,7 @@ import SwiftUI
 
 struct Challenge: Identifiable {
         var id: String
+        var challengeID: String
         var challengeType: String
         var creator: String
         var title: String

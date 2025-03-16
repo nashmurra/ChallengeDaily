@@ -20,7 +20,8 @@ class ChallengeViewModel: ObservableObject {
                     self.dailyChallenges = snapshot?.documents.compactMap { doc in
                         let data = doc.data()
                         return Challenge(
-                            id: doc.documentID,
+                            id:"",
+                            challengeID: doc.documentID,
                             challengeType: data["challengeType"] as? String ?? "No challenge type",
                             creator: data["creator"] as? String ?? "No creator",
                             title: data["title"] as? String ?? "No title",
@@ -34,4 +35,36 @@ class ChallengeViewModel: ObservableObject {
                 }
             }
     }
+    
+    func fetchCurrentChallenge(challengeID: String, completion: @escaping (Challenge?) -> Void) {
+        let db = Firestore.firestore()
+        db.collection("challenges").document(challengeID).getDocument { snapshot, error in
+            if let error = error {
+                print("Error fetching challenge: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+            
+            guard let document = snapshot, document.exists, let data = document.data() else {
+                print("Challenge not found")
+                completion(nil)
+                return
+            }
+            
+            let challenge = Challenge(
+                id: document.documentID,
+                challengeID: document.documentID,
+                challengeType: data["challengeType"] as? String ?? "No challenge type",
+                creator: data["creator"] as? String ?? "No creator",
+                title: data["title"] as? String ?? "No title",
+                instructions: data["instructions"] as? String ?? "No instructions",
+                hint: data["hint"] as? String ?? "No hint"
+            )
+            
+            DispatchQueue.main.async {
+                completion(challenge)
+            }
+        }
+    }
+
 }

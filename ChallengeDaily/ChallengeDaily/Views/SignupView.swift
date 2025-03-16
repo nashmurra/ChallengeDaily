@@ -18,6 +18,9 @@ struct SignupView: View {
     @State private var username: String = ""
     @AppStorage("uid") var userID: String = ""
     
+    @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
+    
+    
     @Binding var currentViewShowing: String
     
     private func isValidPassword(_ password: String) -> Bool {
@@ -203,7 +206,12 @@ struct SignupView: View {
                                 "darkMode": false,
                                 "privateAccount": false,
                                 "contentFilter": "Everyone",
+<<<<<<< Updated upstream
                                 "profileImage": "" 
+=======
+                                "profileImage": "",
+                                "currentChallengeID": currentChallengeViewmodel.currentChallenge!.challengeID
+>>>>>>> Stashed changes
                             ], merge: true) { error in
                                 if let error = error {
                                     print("Error creating user document: \(error.localizedDescription)")
@@ -283,6 +291,10 @@ struct SignupView: View {
             
             
             
+        }
+        .onAppear {
+            currentChallengeViewmodel.fetchDailyChallenges()
+            print("fetched the challenges")
         }
         
         

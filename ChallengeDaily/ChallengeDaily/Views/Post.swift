@@ -10,5 +10,5 @@ import SwiftUI
 struct Post: Identifiable {
     let id = UUID()
     let username: String
-    let image: UIImage
+    let image: String
 }

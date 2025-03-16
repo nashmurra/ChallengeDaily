@@ -1,73 +1,62 @@
-//
-//  FeedView.swift
-//  DesignChallenge
-//
-//  Created by HPro2 on 2/27/25.
-//
-
 import SwiftUI
 
 struct FeedView: View {
+    var post: Post
+
     var body: some View {
-        
         ZStack {
             Color.backgroundDark
                 .ignoresSafeArea()
-            
-            VStack{
-                
-                HStack{
-                    
+
+            VStack {
+                HStack {
                     Image(systemName: "person.crop.circle.fill")
                         .resizable()
                         .frame(width: 30, height: 30)
                         .foregroundColor(Color.whiteText)
-                    
-                    VStack{
-                        Text("johnny_is_cool")
+
+                    VStack {
+                        Text(post.username)
                             .font(.callout)
                             .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment:.leading)
-                        
-                        Text("Sylvania, United States - 47 minutes ago")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text("Just now")
                             .font(.footnote)
-                            .fontWeight(.regular)
-                            .frame(maxWidth: .infinity, alignment:.leading)
-                        
-                        
-                        
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    
+
                     Spacer()
-                    
                     Image(systemName: "ellipsis")
                         .resizable()
                         .frame(width: 20, height: 5)
                         .foregroundColor(Color.whiteText)
-                    //.padding(.horizontal)
-                    
                 }
                 .padding(.horizontal)
-                
-                VStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.backgroundLight) // Semi-transparent
-                        .frame(height: 400) // Adjust height as needed
-                        //.background()
+
+                if let uiImage = decodeBase64ToImage(post.image) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFit()
+                        .cornerRadius(12)
+                        .frame(height: 400)
+                } else {
+                    Text("Failed to load image")
+                        .foregroundColor(.red)
+                        .frame(height: 400)
                 }
-                
+
                 Spacer().frame(height: 30)
-                
-                
-                
             }
         }
-        
-
     }
-}
 
-#Preview {
-    FeedView()
-        .preferredColorScheme(.dark)
+    // Function to decode Base64 string to UIImage
+    func decodeBase64ToImage(_ base64String: String) -> UIImage? {
+        guard let imageData = Data(base64Encoded: base64String),
+              let image = UIImage(data: imageData) else {
+            return nil
+        }
+        return image
+    }
 }

@@ -5,8 +5,11 @@ struct MainView: View {
     @State private var showSocial = false
     @State private var timeRemaining = 0
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
+    @StateObject private var postViewModel = PostViewModel()
+    @StateObject private var userViewModel = UserViewModel()
     @Namespace var namespace
     @State var show = false
+    @State var currentChallenge: Challenge?  // Make it optional
 
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -53,23 +56,24 @@ struct MainView: View {
                         )
                         .padding(.top, -620)
 
-                        if !show {
-                            if let currentChallenge = currentChallengeViewmodel.currentChallenge {
-                                //ChallengeItem(namespace: namespace, show: $show, currentChallange: currentChallenge)
-                                ChallengeItem(namespace: namespace, show: $show, currentChallange: currentChallenge)
-                            }
-                            
-                        } else {
-                            if let currentChallenge = currentChallengeViewmodel.currentChallenge {
-                                ChallengeView(namespace: namespace, show: $show, currentChallange: currentChallenge)
+                        if let challenge = currentChallenge {
+                            if !show {
+                                ChallengeItem(namespace: namespace, show: $show, currentChallange: challenge)
+                            } else {
+                                ChallengeView(namespace: namespace, show: $show, currentChallange: challenge)
                             }
                         }
 
+                        Button(action: {
+                            onCountdownReset()
+                        }) {
+                            Text("Reset Countdown")
+                        }
+
                         VStack(spacing: 0) {
-                            //FeedView()
-                            //FeedView()
-                            //FeedView()
-                            //FeedView()
+                            ForEach(postViewModel.viewModelPosts) { post in
+                                FeedView(post: post)
+                            }
                         }
                     }
                 }
@@ -117,7 +121,8 @@ struct MainView: View {
             }
             .onAppear {
                 updateCountdown()
-                currentChallengeViewmodel.fetchDailyChallenges()
+                setCurrentChallenge()
+                postViewModel.fetchPosts()
             }
             .onReceive(timer) { _ in
                 if timeRemaining > 0 {
@@ -126,10 +131,32 @@ struct MainView: View {
                     updateCountdown()
                 }
             }
-            .onReceive(currentChallengeViewmodel.$currentChallenge) { _ in
-                // Triggers UI update when challenge updates
+        }
+    }
+    
+    func setCurrentChallenge() {
+        userViewModel.fetchUserChallengeID { challengeID in
+            if let challengeID = challengeID {
+                print("User's current challenge ID: \(challengeID)")
+                currentChallengeViewmodel.fetchCurrentChallenge(challengeID: challengeID) { challenge in
+                    if let challenge = challenge {
+                        DispatchQueue.main.async {
+                            self.currentChallenge = challenge
+                        }
+                        print("Fetched challenge: \(challenge.title)")
+                    } else {
+                        print("Challenge not found")
+                    }
+                }
+            } else {
+                print("User has no current challenge ID assigned.")
             }
         }
+    }
+
+    func onCountdownReset() {
+        userViewModel.randomizeUserDailyChallenges()
+        setCurrentChallenge()
     }
 
     func updateCountdown() {
@@ -145,14 +172,22 @@ struct MainView: View {
         let offset = timezone.secondsFromGMT()
         let utcResetDate = calendar.date(from: components)?.addingTimeInterval(TimeInterval(-offset))
 
+        // If the reset time has already passed today, calculate for the next day
         if let resetTime = utcResetDate, resetTime < now {
             components.day! += 1
         }
 
         if let nextReset = calendar.date(from: components) {
-            timeRemaining = Int(nextReset.timeIntervalSince(now))
+            let timeDifference = nextReset.timeIntervalSince(now)
+            timeRemaining = max(0, Int(timeDifference)) // Ensure no negative value
+            
+            // Trigger the reset if the time remaining is 0 (i.e., reset time has passed)
+            if timeRemaining == 0 {
+                onCountdownReset()
+            }
         }
     }
+
 
     func timeString(from seconds: Int) -> String {
         let hours = seconds / 3600
