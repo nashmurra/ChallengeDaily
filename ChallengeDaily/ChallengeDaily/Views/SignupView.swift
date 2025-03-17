@@ -203,15 +203,12 @@ struct SignupView: View {
                                 "username": username,
                                 "email": email,
                                 "createdAt": Timestamp(),
-                                "darkMode": false,
+                                "darkMode": true,
                                 "privateAccount": false,
                                 "contentFilter": "Everyone",
-<<<<<<< Updated upstream
-                                "profileImage": "" 
-=======
                                 "profileImage": "",
-                                "currentChallengeID": currentChallengeViewmodel.currentChallenge!.challengeID
->>>>>>> Stashed changes
+                                "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID,
+
                             ], merge: true) { error in
                                 if let error = error {
                                     print("Error creating user document: \(error.localizedDescription)")
