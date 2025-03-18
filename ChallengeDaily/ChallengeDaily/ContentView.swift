@@ -24,11 +24,13 @@ struct ContentView: View {
                 ZStack {
                     TabView {
                         MainView()
+                            .preferredColorScheme(.dark)
                             .tabItem {
                                 Label("Home", systemImage: "house.fill")
                             }
 
                         AchievementsView()
+                            .preferredColorScheme(.dark)
                             .tabItem {
                                 Label("Achievements", systemImage: "star.fill")
                             }
@@ -57,6 +59,7 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showCamera) {
                     CameraView(selectedImage: $selectedImage)
+                        .preferredColorScheme(.dark)
                         .onDisappear {
                             print("📸 selectedImage after camera: \(String(describing: selectedImage))")
                             if selectedImage != nil {
@@ -69,6 +72,7 @@ struct ContentView: View {
                 .navigationDestination(isPresented: $navigateToPostView) {
                     if let image = selectedImage {
                         PostView(image: image)
+                            .preferredColorScheme(.dark)
                     } else {
                         Text("⚠️ No image available")
                     }

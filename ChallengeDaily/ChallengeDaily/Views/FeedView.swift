@@ -16,7 +16,7 @@ struct FeedView: View {
                         .foregroundColor(Color.whiteText)
 
                     VStack {
-                        Text(post.username)
+                        Text(post.createdAt)
                             .font(.callout)
                             .fontWeight(.bold)
                             .frame(maxWidth: .infinity, alignment: .leading)
