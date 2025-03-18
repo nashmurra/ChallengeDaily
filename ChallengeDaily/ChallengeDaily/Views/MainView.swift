@@ -64,11 +64,13 @@ struct MainView: View {
                             }
                         }
 
+                        /*
                         Button(action: {
                             onCountdownReset()
                         }) {
                             Text("Reset Countdown")
                         }
+                         */
 
                         VStack(spacing: 0) {
                             ForEach(postViewModel.viewModelPosts) { post in
