@@ -12,6 +12,8 @@ struct SocialView: View {
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
     @State private var searchText: String = ""
+    
+    @Binding var currentViewShowing: String
 
     let fakeProfiles = [
         "KongSun", "Bob Smith", "Charlie Brown",
@@ -104,7 +106,10 @@ struct SocialView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    //presentationMode.wrappedValue.dismiss()
+                    withAnimation {
+                        self.currentViewShowing = "main"
+                    }
                 }) {
                     HStack {
                         Image(systemName: "chevron.left")
@@ -120,5 +125,5 @@ struct SocialView: View {
 
 
 #Preview {
-    SocialView()
+    //SocialView()
 }

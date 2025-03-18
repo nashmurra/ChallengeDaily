@@ -8,6 +8,8 @@ struct ProfileView: View {
     @State private var profileImage: UIImage?
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
+    
+    @Binding var currentViewShowing: String
 
     // Add state variables for username and email
     @State private var username: String = ""
@@ -27,7 +29,10 @@ struct ProfileView: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
-                            presentationMode.wrappedValue.dismiss() // Navigate back
+                            //presentationMode.wrappedValue.dismiss() // Navigate back
+                            withAnimation {
+                                self.currentViewShowing = "main"
+                            }
                         }) {
                             HStack {
                                 Image(systemName: "chevron.left")
@@ -39,7 +44,10 @@ struct ProfileView: View {
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
-                            showSettings = true
+                            withAnimation {
+                                self.currentViewShowing = "settings"
+                            }
+                            //showSettings = true
                         }) {
                             HStack {
                                 Image(systemName: "ellipsis")
@@ -52,7 +60,7 @@ struct ProfileView: View {
                 }
             }
             .navigationDestination(isPresented: $showSettings) {
-                SettingsView()
+                //SettingsView()
             }
             .navigationDestination(isPresented: $showProfilePhoto) {
                 ProfilePhotoSelectorView(profileImage: $profileImage, userID: userID)
@@ -201,7 +209,7 @@ extension ProfileView {
 }
 
 #Preview {
-    ProfileView()
+    //ProfileView()
 }
 
 

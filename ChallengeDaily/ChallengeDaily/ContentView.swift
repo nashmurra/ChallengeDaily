@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 import FirebaseAuth
 import PhotosUI
 
@@ -18,9 +17,10 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            if userID == "" {
+            //if userID == "" {
                 AuthView()
-            } else {
+            //} else {
+                /*
                 ZStack {
                     TabView {
                         MainView()
@@ -77,7 +77,8 @@ struct ContentView: View {
                         Text("⚠️ No image available")
                     }
                 }
-            }
+                 */
+           // }
         }
     }
 }

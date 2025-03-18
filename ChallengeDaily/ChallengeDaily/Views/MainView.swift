@@ -1,9 +1,16 @@
 import SwiftUI
+import FirebaseAuth
+import PhotosUI
 
 struct MainView: View {
+    @Binding var currentViewShowing: String
+    
     @State private var showProfile = false
     @State private var showSocial = false
     @State private var timeRemaining = 0
+    @State private var showCamera: Bool = false
+    @State private var selectedImage: UIImage? = nil
+    @State private var navigateToPostView: Bool = false
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
     @StateObject private var postViewModel = PostViewModel()
     @StateObject private var userViewModel = UserViewModel()
@@ -64,14 +71,6 @@ struct MainView: View {
                             }
                         }
 
-                        /*
-                        Button(action: {
-                            onCountdownReset()
-                        }) {
-                            Text("Reset Countdown")
-                        }
-                         */
-
                         VStack(spacing: 0) {
                             ForEach(postViewModel.viewModelPosts) { post in
                                 FeedView(post: post)
@@ -85,7 +84,9 @@ struct MainView: View {
                     Spacer().frame(height: 80)
                     HStack {
                         Button(action: {
-                            showSocial = true
+                            withAnimation {
+                                self.currentViewShowing = "social"
+                            }
                         }) {
                             Image(systemName: "person.2.fill")
                                 .resizable()
@@ -99,7 +100,9 @@ struct MainView: View {
                             .textCase(.uppercase)
                         Spacer()
                         Button(action: {
-                            showProfile = true
+                            withAnimation {
+                                self.currentViewShowing = "profile"
+                            }
                         }) {
                             Image(systemName: "person.crop.circle.fill")
                                 .resizable()
@@ -113,13 +116,50 @@ struct MainView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 60)
                 .zIndex(1)
+
+                VStack {
+                    Spacer()
+                    Button(action: {
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            showCamera = true
+                        } else {
+                            print("Camera not available")
+                        }
+                    }) {
+                        Image(systemName: "plus")
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                            .padding()
+                            .background(Color.white)
+                            .foregroundColor(.black)
+                            .clipShape(Circle())
+                            .shadow(radius: 5)
+                    }
+                    .offset(y: -20)
+                }
             }
             .ignoresSafeArea(edges: .top)
-            .navigationDestination(isPresented: $showProfile) {
-                ProfileView()
+            .navigationDestination(isPresented: $showProfile) {}
+            .navigationDestination(isPresented: $showSocial) {}
+            .sheet(isPresented: $showCamera) {
+                CameraView(selectedImage: $selectedImage)
+                    .preferredColorScheme(.dark)
+                    .onDisappear {
+                        print("📸 selectedImage after camera: \(String(describing: selectedImage))")
+                        if selectedImage != nil {
+                            DispatchQueue.main.async {
+                                navigateToPostView = true
+                            }
+                        }
+                    }
             }
-            .navigationDestination(isPresented: $showSocial) {
-                SocialView()
+            .navigationDestination(isPresented: $navigateToPostView) {
+                if let image = selectedImage {
+                    PostView(image: image, currentViewShowing: $currentViewShowing)
+                        .preferredColorScheme(.dark)
+                } else {
+                    Text("⚠️ No image available")
+                }
             }
             .onAppear {
                 updateCountdown()
@@ -135,6 +175,7 @@ struct MainView: View {
             }
         }
     }
+
     
     func setCurrentChallenge() {
         userViewModel.fetchUserChallengeID { challengeID in

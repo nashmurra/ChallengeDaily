@@ -163,6 +163,10 @@ struct LoginView: View {
                                     userID = authResult.user.uid
                                 }
                             }
+                            
+                            withAnimation {
+                                self.currentViewShowing = "home"
+                            }
                         }
                     } label: {
                         Text("Sign In")
@@ -182,7 +186,9 @@ struct LoginView: View {
                     
                     Button(action: {
                         withAnimation {
-                            self.currentViewShowing = "signup"
+                            withAnimation {
+                                self.currentViewShowing = "signup"
+                            }
                         }
                     }) {
                         Text("Don't have an account?")

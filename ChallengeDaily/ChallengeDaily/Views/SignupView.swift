@@ -216,6 +216,10 @@ struct SignupView: View {
                                     print("User document created successfully!")
                                 }
                             }
+                            
+                            withAnimation {
+                                self.currentViewShowing = "home"
+                            }
                         }
                         
                     } label: {

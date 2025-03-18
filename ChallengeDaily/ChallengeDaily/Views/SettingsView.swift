@@ -17,6 +17,8 @@ struct SettingsView: View {
     @State private var showAchievements = false
     @State private var showPreferences = false
     
+    @Binding var currentViewShowing: String
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -134,7 +136,8 @@ struct SettingsView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    //presentationMode.wrappedValue.dismiss()
+                    self.currentViewShowing = "profile"
                 }) {
                     HStack {
                         Image(systemName: "chevron.left")
@@ -149,6 +152,6 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
-        .preferredColorScheme(.dark)
+    //SettingsView()
+       // .preferredColorScheme(.dark)
 }

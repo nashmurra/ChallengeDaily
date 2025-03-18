@@ -21,7 +21,7 @@ struct FeedView: View {
                             .fontWeight(.bold)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        Text("Just now")
+                        Text(relativeTime(post.createdAt))
                             .font(.footnote)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -50,6 +50,13 @@ struct FeedView: View {
             }
         }
     }
+    
+    func relativeTime(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
+
 
     // Function to decode Base64 string to UIImage
     func decodeBase64ToImage(_ base64String: String) -> UIImage? {
