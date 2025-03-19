@@ -43,8 +43,8 @@ struct PostView: View {
                         } else {
                             print("Feed document created successfully!")
                             DispatchQueue.main.async {
-                                //navigateToMain = true  // Set state to trigger navigation
-                                self.currentViewShowing = "main"
+                                navigateToMain = true  // Set state to trigger navigation
+                                //self.currentViewShowing = "main"
                             }
                         }
                     }
@@ -69,7 +69,7 @@ struct PostView: View {
         }
         .padding()
         .navigationDestination(isPresented: $navigateToMain) {
-            //MainView()  // Navigate to MainView after posting
+            MainView(currentViewShowing: $currentViewShowing)  // Navigate to MainView after posting
         }
     }
 
