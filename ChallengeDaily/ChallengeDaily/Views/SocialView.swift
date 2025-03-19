@@ -30,8 +30,37 @@ struct SocialView: View {
 
     var body: some View {
         ZStack {
-            Color.black.edgesIgnoringSafeArea(.all)
+            Color.backgroundDark.edgesIgnoringSafeArea(.all)
             
+            GeometryReader { geometry in
+                let icons = ["star.fill", "heart.fill", "bolt.fill", "flame.fill", "cloud.fill", "moon.fill", "sun.max.fill",
+                             "checkmark.circle.fill", "exclamationmark.triangle.fill"]
+                let spacing: CGFloat = 80 // Base spacing between icons
+                let jitter: CGFloat = 10 // How much each icon can shift
+
+                let rows = Int(geometry.size.height / spacing) + 5
+                let columns = Int(geometry.size.width / spacing) + 5
+
+                ForEach(0..<rows, id: \.self) { row in
+                    ForEach(0..<columns, id: \.self) { column in
+                        let randomXOffset = CGFloat.random(in: -jitter...jitter)
+                        let randomYOffset = CGFloat.random(in: -jitter...jitter)
+
+                        Image(systemName: icons.randomElement()!)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 25, height: 25)
+                            .foregroundColor(.white.opacity(0.2)) // Faded effect
+                            .position(
+                                x: CGFloat(column) * spacing + randomXOffset,
+                                y: CGFloat(row) * spacing + randomYOffset
+                            )
+                            .ignoresSafeArea(.all)
+                    }
+                }
+            }
+            .allowsHitTesting(false)
+
             VStack {
                 Spacer().frame(height: 20)
                 
@@ -54,19 +83,19 @@ struct SocialView: View {
                     }
                 }
                 .padding(10)
-                .background(Color.white.opacity(0.2))
+                .background(Color.backgroundLight)
                 .cornerRadius(8)
                 .padding(.horizontal)
                 
-                Text("Recommened Friends")
+                Text("Recommended Friends")
                     .font(.title)
-                    .foregroundColor(.white)
-                    .font(Font.custom("Baskerville-Bold", size: 26))
+                    .foregroundColor(.whiteText)
                     .fontWeight(.bold)
-
+                    .padding(.top, 10)
+                
                 ScrollView {
                     VStack(spacing: 10) {
-                        ForEach(filteredProfiles, id: \.self) { profile in
+                        ForEach(filteredProfiles, id: \ .self) { profile in
                             HStack {
                                 Image(systemName: "person.circle.fill")
                                     .resizable()
@@ -74,7 +103,7 @@ struct SocialView: View {
                                     .foregroundColor(.gray)
                                 
                                 Text(profile)
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.whiteText)
                                     .font(.system(size: 18, weight: .medium))
                                     .padding(.leading, 10)
 
@@ -86,18 +115,16 @@ struct SocialView: View {
                                     Image(systemName: "plus.circle.fill")
                                         .resizable()
                                         .frame(width: 24, height: 24)
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(Color.pinkColor)
                                 }
-
                             }
                             .padding()
-                            .background(Color.gray.opacity(0.2))
+                            .background(Color.backgroundLight)
                             .cornerRadius(10)
                         }
                     }
                     .padding(.horizontal)
                 }
-
                 Spacer()
             }
         }
@@ -106,16 +133,13 @@ struct SocialView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {
-                    //presentationMode.wrappedValue.dismiss()
-                    withAnimation {
-                        self.currentViewShowing = "main"
-                    }
+                    presentationMode.wrappedValue.dismiss()
                 }) {
                     HStack {
                         Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
+                            .foregroundColor(.whiteText)
                         Text("")
-                            .foregroundColor(.white)
+                            .foregroundColor(.whiteText)
                     }
                 }
             }
