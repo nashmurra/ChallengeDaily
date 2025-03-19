@@ -11,11 +11,13 @@ import Firebase
 import FirebaseFirestore
 import FirebaseAuth
 
-struct SignupView: View {
+struct InfoView: View {
     //@Binding var currentViewShowing: String
-    @State private var email: String = ""
-    @State private var password: String = ""
     @State private var username: String = ""
+    @State private var phonenumber: String = ""
+    @Binding private var email: String
+    @Binding private var password: String
+    //@State private var username: String = ""
     @AppStorage("uid") var userID: String = ""
     
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
@@ -87,7 +89,7 @@ struct SignupView: View {
                     
                     Spacer().frame(height: 150)
                     
-                    Text("Sign Up")
+                    Text("More Info")
                         .font(.system(size: 50, weight: .heavy, design: .default))
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -109,7 +111,7 @@ struct SignupView: View {
                         
                         Spacer().frame(height: 10)
                         
-                        Text("EMAIL")
+                        Text("USERNAME")
                             .font(.caption)
                             .fontWeight(.medium)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -118,7 +120,7 @@ struct SignupView: View {
                         
                         HStack{
                             //Image(systemName: "mail")
-                            TextField("Email", text: $email)
+                            TextField("Username", text: $username)
                                 .foregroundColor(Color.whiteText)
                                 .disableAutocorrection(true)
                                 .autocapitalization(.none)
@@ -126,10 +128,14 @@ struct SignupView: View {
                             
                             Spacer()
                             
-                            if (email.count != 0) {
-                                Image(systemName: email.isValidEmail() ?  "checkmark" : "xmark")
+                            if (username.count != 2) {
+                                Image(systemName: "checkmark")
                                     .fontWeight(.bold)
-                                    .foregroundColor(email.isValidEmail() ? .green : .red)
+                                    .foregroundColor(.green)
+                            } else {
+                                Image(systemName: "xmark")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.red)
                             }
                             
                         }
@@ -150,7 +156,7 @@ struct SignupView: View {
                         
                         Spacer().frame(height: 10)
                         
-                        Text("PASSWORD")
+                        Text("PHONE NUMBER")
                             .font(.caption)
                             .fontWeight(.medium)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -159,16 +165,20 @@ struct SignupView: View {
                         
                         HStack{
                             //Image(systemName: "lock")
-                            SecureField("Password", text: $password)
+                            SecureField("Phone Number", text: $phonenumber)
                                 .disableAutocorrection(true)
                                 .autocapitalization(.none)
                             
                             Spacer()
                             
-                            if (password.count != 0) {
-                                Image(systemName: isValidPassword(password) ?  "checkmark" : "xmark")
+                            if (phonenumber.count != 10) {
+                                Image(systemName: "checkmark")
                                     .fontWeight(.bold)
-                                    .foregroundColor(isValidPassword(password) ? .green : .red)
+                                    .foregroundColor(.green)
+                            } else {
+                                Image(systemName: "xmark")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.red)
                             }
                             
                         }
@@ -186,8 +196,42 @@ struct SignupView: View {
                     }
                     
                     Button {
-                        
-                        
+                        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+                            if let error = error {
+                                print("Error creating user: \(error.localizedDescription)")
+                                return
+                            }
+                            
+                            guard let authResult = authResult else { return }
+                            
+                            let newUserID = authResult.user.uid
+                            userID = newUserID  // Save userID in AppStorage
+                            
+                            let db = Firestore.firestore()
+                            db.collection("users").document(newUserID).setData([
+                                "userID": newUserID,
+                                "username": username,
+                                "email": email,
+                                "phoneNumber": phonenumber,
+                                "createdAt": Timestamp(),
+                                "darkMode": true,
+                                "privateAccount": false,
+                                "contentFilter": "Everyone",
+                                "profileImage": "",
+                                "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID,
+
+                            ], merge: true) { error in
+                                if let error = error {
+                                    print("Error creating user document: \(error.localizedDescription)")
+                                } else {
+                                    print("User document created successfully!")
+                                }
+                            }
+                            
+                            withAnimation {
+                                self.currentViewShowing = "home"
+                            }
+                        }
                         
                     } label: {
                         Text("Create Account")
@@ -211,11 +255,11 @@ struct SignupView: View {
                     Button(action: {
                         
                         withAnimation {
-                            self.currentViewShowing = "login"
+                            self.currentViewShowing = "signup"
                         }
                         
                     }) {
-                        Text("Already have an account?")
+                        Text("Nevermind")
                             .font(.footnote)
                             .foregroundColor(.white.opacity((0.7)))
                     }
