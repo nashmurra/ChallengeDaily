@@ -13,10 +13,10 @@ import FirebaseAuth
 
 struct InfoView: View {
     //@Binding var currentViewShowing: String
-    @State private var username: String = ""
-    @State private var phonenumber: String = ""
-    @Binding private var email: String
-    @Binding private var password: String
+    @State var username: String = ""
+    @State var phonenumber: String = ""
+    @Binding var email: String
+    @Binding var password: String
     //@State private var username: String = ""
     @AppStorage("uid") var userID: String = ""
     

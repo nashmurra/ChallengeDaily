@@ -104,9 +104,12 @@ struct SettingsView: View {
                             let firebaseAuth = Auth.auth()
                             do {
                                 try firebaseAuth.signOut()
+                                
                                 withAnimation {
                                     userID = ""
+                                    self.currentViewShowing = "login"
                                 }
+                                
                             } catch let signOutError as NSError {
                                 print("Error signing out: %@", signOutError)
                             }
