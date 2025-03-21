@@ -15,6 +15,8 @@ struct AuthView: View {
     var body: some View {
         ZStack {
             if userID == "" {
+                StartView()
+                /*
                 if currentViewShowing == "login" {
                     LoginView(currentViewShowing: $currentViewShowing)
                         .transition(.move(edge: .top))
@@ -24,6 +26,7 @@ struct AuthView: View {
                         .preferredColorScheme(.dark)
                         .transition(.move(edge: .bottom))
                 }
+                 */
             } else {
                 if currentViewShowing == "social" {
                     SocialView(currentViewShowing: $currentViewShowing)
