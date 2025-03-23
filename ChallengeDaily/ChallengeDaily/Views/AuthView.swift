@@ -41,7 +41,7 @@ struct AuthView: View {
                         .preferredColorScheme(.dark)
                         .transition(.move(edge: .bottom))
                 } else {
-                    MainView(currentViewShowing: $currentViewShowing)
+                    StartView()
                         .preferredColorScheme(.dark)
                         .transition(.move(edge: .bottom))
                 }

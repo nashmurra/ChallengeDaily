@@ -196,42 +196,7 @@ struct InfoView: View {
                     }
                     
                     Button {
-                        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-                            if let error = error {
-                                print("Error creating user: \(error.localizedDescription)")
-                                return
-                            }
-                            
-                            guard let authResult = authResult else { return }
-                            
-                            let newUserID = authResult.user.uid
-                            userID = newUserID  // Save userID in AppStorage
-                            
-                            let db = Firestore.firestore()
-                            db.collection("users").document(newUserID).setData([
-                                "userID": newUserID,
-                                "username": username,
-                                "email": email,
-                                "phoneNumber": phonenumber,
-                                "createdAt": Timestamp(),
-                                "darkMode": true,
-                                "privateAccount": false,
-                                "contentFilter": "Everyone",
-                                "profileImage": "",
-                                "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID,
-
-                            ], merge: true) { error in
-                                if let error = error {
-                                    print("Error creating user document: \(error.localizedDescription)")
-                                } else {
-                                    print("User document created successfully!")
-                                }
-                            }
-                            
-                            withAnimation {
-                                self.currentViewShowing = "home"
-                            }
-                        }
+                        
                         
                     } label: {
                         Text("Create Account")

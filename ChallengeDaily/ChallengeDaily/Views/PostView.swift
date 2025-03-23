@@ -6,7 +6,7 @@ import FirebaseFirestore
 struct PostView: View {
     var image: UIImage?
     @State private var navigateToMain = false  // State to trigger navigation
-    @Binding var currentViewShowing: String
+    //@Binding var currentViewShowing: String
 
     var body: some View {
         VStack(spacing: 16) {
@@ -69,7 +69,7 @@ struct PostView: View {
         }
         .padding()
         .navigationDestination(isPresented: $navigateToMain) {
-            MainView(currentViewShowing: $currentViewShowing)  // Navigate to MainView after posting
+            MainView()  // Navigate to MainView after posting
         }
     }
 

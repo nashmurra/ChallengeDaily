@@ -3,7 +3,7 @@ import FirebaseAuth
 import PhotosUI
 
 struct MainView: View {
-    @Binding var currentViewShowing: String
+    //@Binding var currentViewShowing: String
     
     @State private var showProfile = false
     @State private var showSocial = false
@@ -85,7 +85,7 @@ struct MainView: View {
                     HStack {
                         Button(action: {
                             withAnimation {
-                                self.currentViewShowing = "social"
+                                //self.currentViewShowing = "social"
                             }
                         }) {
                             Image(systemName: "person.2.fill")
@@ -101,7 +101,7 @@ struct MainView: View {
                         Spacer()
                         Button(action: {
                             withAnimation {
-                                self.currentViewShowing = "profile"
+                                //self.currentViewShowing = "profile"
                             }
                         }) {
                             Image(systemName: "person.crop.circle.fill")
@@ -155,7 +155,7 @@ struct MainView: View {
             }
             .navigationDestination(isPresented: $navigateToPostView) {
                 if let image = selectedImage {
-                    PostView(image: image, currentViewShowing: $currentViewShowing)
+                    PostView(image: image)
                         .preferredColorScheme(.dark)
                 } else {
                     Text("⚠️ No image available")
