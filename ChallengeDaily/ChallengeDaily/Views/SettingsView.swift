@@ -16,6 +16,9 @@ struct SettingsView: View {
     @State private var showPastChallenges = false
     @State private var showAchievements = false
     @State private var showPreferences = false
+    @State private var showNotifcatons = false
+    @State private var showPrivacy = false
+    @State private var isPrivate = false
     
     @Binding var currentViewShowing: String
     
@@ -42,8 +45,9 @@ struct SettingsView: View {
                     }
                     
                     Section(header: Text("Settings")) {
-                        Button {
-                        } label: {
+                        Button (action: {
+                            showPrivacy = true
+                        }) {
                             Text("Privacy")
                                 .foregroundColor(.white)
                         }
@@ -132,6 +136,9 @@ struct SettingsView: View {
             }
             .navigationDestination(isPresented: $showPreferences) {
                 PreferencesView()
+            }
+            .navigationDestination(isPresented: $showPrivacy) {
+                PrivacyView(isPrivate: $isPrivate)
             }
         }
         .navigationBarBackButtonHidden(true)
