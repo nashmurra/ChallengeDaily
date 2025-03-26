@@ -15,25 +15,31 @@ struct PastChallengesView: View {
     
     var body: some View {
         NavigationStack {
-            VStack (spacing: 0) {
-                Text("Past Challenges")
-                    .font(.title.bold())
-                //ChallengeItem(namespace: namespace, show: $show)
+            ZStack {
+                Image("BackgroundScreen")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                VStack (spacing: 0) {
+                    Text("Past Challenges")
+                        .font(.title.bold())
+                    //ChallengeItem(namespace: namespace, show: $show)
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
-            .frame(maxHeight: .infinity, alignment: .top)
-        }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                        Text("")
-                            .foregroundColor(.white)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.white)
+                            Text("")
+                                .foregroundColor(.white)
+                        }
                     }
                 }
             }

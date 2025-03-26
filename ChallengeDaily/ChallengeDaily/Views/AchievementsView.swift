@@ -47,56 +47,62 @@ struct AchievementsView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    ForEach(achievements) { achievement in
-                        HStack {
-                            Image(systemName: achievement.icon)
-                                .foregroundColor(achievement.isUnlocked ? .yellow : .gray)
-                                .font(.title)
-                                .frame(width: 50, height: 50)
-                                .background(Circle().fill(Color(.systemGray6)))
-                                .shadow(radius: 3)
-                            
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(achievement.title)
-                                    .font(.headline)
-                                    .foregroundColor(achievement.isUnlocked ? .primary : .gray)
-                                Text(achievement.description)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+            ZStack {
+                Image("BackgroundScreen")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 20) {
+                        ForEach(achievements) { achievement in
+                            HStack {
+                                Image(systemName: achievement.icon)
+                                    .foregroundColor(achievement.isUnlocked ? .yellow : .gray)
+                                    .font(.title)
+                                    .frame(width: 50, height: 50)
+                                    .background(Circle().fill(Color(.systemGray6)))
+                                    .shadow(radius: 3)
                                 
-                                ProgressView(value: achievement.progress)
-                                    .progressViewStyle(LinearProgressViewStyle())
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(achievement.title)
+                                        .font(.headline)
+                                        .foregroundColor(achievement.isUnlocked ? .primary : .gray)
+                                    Text(achievement.description)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                    
+                                    ProgressView(value: achievement.progress)
+                                        .progressViewStyle(LinearProgressViewStyle())
+                                }
+                                .padding(.leading, 10)
                             }
-                            .padding(.leading, 10)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(RoundedRectangle(cornerRadius: 15).fill(Color(.systemGray5)))
+                            .shadow(radius: 3)
                         }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(RoundedRectangle(cornerRadius: 15).fill(Color(.systemGray5)))
-                        .shadow(radius: 3)
                     }
+                    .padding()
                 }
-                .padding()
+                .navigationTitle("Achievements")
+                .frame(maxWidth: .infinity, alignment: .center)
+                .onAppear {
+                    updateAchievements()
+                }
             }
-            .navigationTitle("Achievements")
-            .frame(maxWidth: .infinity, alignment: .center)
-            .onAppear {
-                updateAchievements()
-            }
-        }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                        Text("")
-                            .foregroundColor(.white)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.white)
+                            Text("")
+                                .foregroundColor(.white)
+                        }
                     }
                 }
             }

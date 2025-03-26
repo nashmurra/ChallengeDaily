@@ -11,160 +11,123 @@ import StoreKit
 
 struct SettingsView: View {
     @StateObject var userViewModel = UserViewModel()
-    @AppStorage("uid") var userID: String = ""
-    @Environment(\.presentationMode) var presentationMode
-    @State private var showPastChallenges = false
-    @State private var showAchievements = false
-    @State private var showPreferences = false
-    @State private var showNotifications = false
-    @State private var showPrivacy = false
-    @State private var isPrivate = false
-    
-    @Binding var currentViewShowing: String
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
-                List {
+        @AppStorage("uid") var userID: String = ""
+        @Environment(\.presentationMode) var presentationMode
+        @State private var showPastChallenges = false
+        @State private var showAchievements = false
+        @State private var showPreferences = false
+        @State private var showNotifications = false
+        @State private var showPrivacy = false
+        @State private var isPrivate = false
+
+        @Binding var currentViewShowing: String
+
+        var body: some View {
+            NavigationView {
+                ZStack {
+                    Image("BackgroundScreen")
+                        .resizable()
+                        .scaledToFill()
+                        .ignoresSafeArea()
                     
-                    Section(header: Text("Features")) {
-                        Button (action: {
-                            showPastChallenges = true
-                        }) {
-                            Text("Past Challenges")
-                                .foregroundColor(.white)
-                        }
+                    VStack {
+                        Text("Settings")
+                            .font(.system(size: 36, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            .padding(.top, 60)
                         
-                        Button (action: {
-                            showAchievements = true
-                        }) {
-                            Text("Achievements")
-                                .foregroundColor(.white)
-                        }
-                    }
-                    
-                    Section(header: Text("Settings")) {
-                        Button (action: {
-                            showPrivacy = true
-                        }) {
-                            Text("Privacy")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                        } label: {
-                            Text("Time Zone")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                        } label: {
-                            Text("Notifications")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button (action: {
-                            showPreferences = true
-                        }) {
-                            Text("Preferences")
-                                .foregroundColor(.white)
-                        }
-                    }
-                    
-                    Section(header: Text("About")) {
-                        Button {
-                            let appURL = URL(string: "https://apps.apple.com/app/your-app-id")!
-                            let activityVC = UIActivityViewController(activityItems: [appURL], applicationActivities: nil)
-                            
-                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let rootVC = windowScene.windows.first?.rootViewController {
-                                rootVC.present(activityVC, animated: true, completion: nil)
+                        List {
+                            Section(header: Text("Features").foregroundColor(.white)) {
+                                SettingsButton(title: "Past Challenges") { showPastChallenges = true }
+                                SettingsButton(title: "Achievements") { showAchievements = true }
                             }
-                        } label: {
-                            Text("Share")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                        } label: {
-                            Text("About")
-                                .foregroundColor(.white)
-                        }
-                        
-                        Button {
-                            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                                SKStoreReviewController.requestReview(in: scene)
+
+                            Section(header: Text("Settings").foregroundColor(.white)) {
+                                SettingsButton(title: "Privacy") { showPrivacy = true }
+                                SettingsButton(title: "Time Zone") { }
+                                SettingsButton(title: "Notifications") { showNotifications = true }
+                                SettingsButton(title: "Preferences") { showPreferences = true }
                             }
-                        } label: {
-                            Text("Rate")
-                                .foregroundColor(.white)
-                        }
-                        
-                    }
-                    
-                    Section() {
-                        Button(action: {
-                            let firebaseAuth = Auth.auth()
-                            do {
-                                try firebaseAuth.signOut()
-                                
-                                withAnimation {
-                                    userID = ""
-                                    self.currentViewShowing = "login"
+
+                            Section(header: Text("About").foregroundColor(.white)) {
+                                SettingsButton(title: "Share") {
+                                    let appURL = URL(string: "https://apps.apple.com/app/your-app-id")!
+                                    let activityVC = UIActivityViewController(activityItems: [appURL], applicationActivities: nil)
+                                    
+                                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                       let rootVC = windowScene.windows.first?.rootViewController {
+                                        rootVC.present(activityVC, animated: true, completion: nil)
+                                    }
                                 }
                                 
-                            } catch let signOutError as NSError {
-                                print("Error signing out: %@", signOutError)
+                                SettingsButton(title: "About") {
+                                    // go to AboutView
+                                }
+                                
+                                SettingsButton(title: "Rate") {
+                                    if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                                        SKStoreReviewController.requestReview(in: scene)
+                                    }
+                                }
                             }
-                        }) {
-                            Text("LOG OUT")
-                                .foregroundColor(.red)
-                                .fontWeight(.heavy)
-                                .frame(maxWidth: .infinity, alignment: .center)
+
+                            Section {
+                                Button(action: {
+                                    let firebaseAuth = Auth.auth()
+                                    do {
+                                        try firebaseAuth.signOut()
+                                        
+                                        withAnimation {
+                                            userID = ""
+                                            self.currentViewShowing = "login"
+                                        }
+                                    } catch let signOutError as NSError {
+                                        print("Error signing out: %@", signOutError)
+                                    }
+                                }) {
+                                    Text("LOG OUT")
+                                        .foregroundColor(.red)
+                                        .fontWeight(.heavy)
+                                        .frame(maxWidth: .infinity, alignment: .center)
+                                }
+                            }
                         }
+                        .listStyle(InsetGroupedListStyle())
+                        .background(Color.black.opacity(0.5)) // Adds a slight overlay for readability
                     }
                 }
-                .listStyle(GroupedListStyle())
-                .navigationTitle("Settings")
             }
-            .navigationDestination(isPresented: $showPastChallenges) {
-                PastChallengesView()
-            }
-            .navigationDestination(isPresented: $showAchievements) {
-                AchievementsView()
-            }
-            .navigationDestination(isPresented: $showPreferences) {
-                PreferencesView()
-            }
-            .navigationDestination(isPresented: $showPrivacy) {
-                PrivacyView(userID: userID)
-            }
-            .navigationDestination(isPresented: $showNotifications) {
-                NotificationsView(userID: userID)
-            }
-        }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    //presentationMode.wrappedValue.dismiss()
-                    self.currentViewShowing = "profile"
-                }) {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
-                        Text("")
-                            .foregroundColor(.white)
+            .navigationDestination(isPresented: $showPastChallenges) { PastChallengesView() }
+            .navigationDestination(isPresented: $showAchievements) { AchievementsView() }
+            .navigationDestination(isPresented: $showPreferences) { PreferencesView() }
+            .navigationDestination(isPresented: $showPrivacy) { PrivacyView(userID: userID) }
+            .navigationDestination(isPresented: $showNotifications) { NotificationsView(userID: userID) }
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { self.currentViewShowing = "profile" }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                                .foregroundColor(.white)
+                        }
                     }
                 }
             }
         }
     }
-}
 
-#Preview {
-    //SettingsView()
-       // .preferredColorScheme(.dark)
-}
+    // Reusable Button for Settings List
+    struct SettingsButton: View {
+        let title: String
+        let action: () -> Void
+        
+        var body: some View {
+            Button(action: action) {
+                Text(title)
+                    .foregroundColor(.white)
+            }
+        }
+    }
