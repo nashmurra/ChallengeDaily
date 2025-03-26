@@ -6,92 +6,57 @@
 //
 
 import SwiftUI
+import FirebaseFirestore
 
 struct PrivacyView: View {
-    @Binding var isPrivate: Bool
+    @State private var isPrivate: Bool = false
     @State private var findFriendsWithContacts: Bool = false
     @State private var showBlockedUsers = false
-    
+    var userID: String  // User ID for Firestore storage
+
     var body: some View {
         ZStack {
             Image("BackgroundScreen")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
-                .blur(radius: 10)
-                .overlay(Color.black.opacity(0.4))
             
-            VStack {
-                Spacer().frame(height: 20)
-                
-                Text("Privacy Settings")
-                    .font(.system(size: 50, weight: .heavy))
+            VStack(spacing: 30) {
+                // Title
+                Text("Privacy")
+                    .font(.system(size: 36, weight: .bold))
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .foregroundColor(Color.white)
-                    .padding(.top, 50)
-                    .padding()
                     .padding(.horizontal)
+                    .padding(.top, 60)
                 
-                Spacer().frame(height: 50)
-                
-                VStack(spacing: 20) {
-                    Toggle(isOn: $isPrivate) {
-                        Text("Private Account")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    }
-                    .toggleStyle(SwitchToggleStyle(tint: .blue))
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.dark)
-                            .shadow(radius: 5)
-                    )
-                    .padding(.horizontal)
+                VStack(spacing: 15) {
+                    privacyToggle(title: "Private Account", description: "Only approved followers can see your content.", isOn: $isPrivate)
+                    privacyToggle(title: "Find Friends with Contacts", description: "Find and connect with friends using your contacts.", isOn: $findFriendsWithContacts)
                     
-                    Text("A private account means only approved followers can see your content.")
-                        .font(.footnote)
-                        .foregroundColor(.white.opacity(0.7))
-                        .multilineTextAlignment(.center)
+                    // Blocked Users Button
+                    Button(action: { showBlockedUsers = true }) {
+                        HStack {
+                            Text("Blocked Users")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .foregroundColor(.white)
                         .padding()
-                    
-                    Toggle(isOn: $findFriendsWithContacts) {
-                        Text("Find Friends with Contacts")
-                            .font(.title2)
-                            .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(12)
                     }
-                    .toggleStyle(SwitchToggleStyle(tint: .blue))
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 15)
-                            .fill(Color.dark)
-                            .shadow(radius: 5)
-                    )
                     .padding(.horizontal)
-                    
-                    Button(action: {
-                        showBlockedUsers = true
-                    }) {
-                        Text("Blocked Users")
-                            .foregroundColor(Color.white)
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .fill(Color.red)
-                                    .shadow(radius: 5)
-                            )
-                            .padding(.horizontal, 25)
-                    }
                 }
-                .padding()
                 
                 Spacer()
                 
+                // Save Settings Button
                 Button(action: {
-                    // Handle privacy setting confirmation
+                    savePrivacySettings()
                 }) {
                     Text("Save Settings")
                         .foregroundColor(Color.white)
@@ -101,15 +66,67 @@ struct PrivacyView: View {
                         .padding(17)
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.secondaryAccent))
+                                .fill(Color.blue.opacity(0.8))
+                        )
                         .padding(.horizontal, 25)
                 }
                 
                 Spacer()
             }
-            .navigationDestination(isPresented: $showBlockedUsers) {
-                BlockedUsersView()
+        }
+        .sheet(isPresented: $showBlockedUsers) {
+            BlockedUsersView()
+        }
+        .onAppear {
+            loadPrivacySettings()
+        }
+    }
+    
+    // Custom Toggle View
+    func privacyToggle(title: String, description: String, isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Toggle(isOn: isOn) {
+                Text(title)
+                    .font(.title3)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+            }
+            .toggleStyle(SwitchToggleStyle(tint: .blue))
+            
+            Text(description)
+                .font(.footnote)
+                .foregroundColor(.white.opacity(0.6))
+        }
+        .padding()
+        .background(Color.black.opacity(0.6))
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+    
+    // Save privacy settings to Firestore
+    func savePrivacySettings() {
+        let db = Firestore.firestore()
+        db.collection("users").document(userID).setData([
+            "isPrivate": isPrivate,
+            "findFriendsWithContacts": findFriendsWithContacts
+        ], merge: true) { error in
+            if let error = error {
+                print("DEBUG: Failed to save privacy settings: \(error.localizedDescription)")
+            } else {
+                print("DEBUG: Privacy settings saved successfully")
+            }
+        }
+    }
+
+    // Load privacy settings from Firestore
+    func loadPrivacySettings() {
+        let db = Firestore.firestore()
+        db.collection("users").document(userID).getDocument { document, error in
+            if let document = document, document.exists, let data = document.data() {
+                isPrivate = data["isPrivate"] as? Bool ?? false
+                findFriendsWithContacts = data["findFriendsWithContacts"] as? Bool ?? false
             }
         }
     }
 }
+

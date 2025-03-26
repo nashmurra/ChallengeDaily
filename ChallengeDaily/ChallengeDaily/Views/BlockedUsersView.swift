@@ -8,52 +8,65 @@
 import SwiftUI
 
 struct BlockedUsersView: View {
-    @State private var blockedUsers: [String] = ["User1", "User2", "User3"] // Replace with actual blocked users data
+    @State private var blockedUsers: [String] = ["User1", "User2", "User3"] // Example data
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Image("BackgroundScreen")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
             
             VStack {
+                // Title
                 Text("Blocked Users")
-                    .font(.system(size: 40, weight: .bold))
+                    .font(.system(size: 36, weight: .bold))
                     .foregroundColor(.white)
-                    .padding(.top, 50)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal)
+                    .padding(.top, 60)
                 
                 if blockedUsers.isEmpty {
                     Text("No blocked users")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.6))
                         .padding()
                 } else {
-                    List {
-                        ForEach(blockedUsers, id: \.self) { user in
-                            HStack {
-                                Text(user)
-                                    .foregroundColor(.white)
-                                    .font(.title3)
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    unblockUser(user)
-                                }) {
-                                    Text("Unblock")
-                                        .foregroundColor(.red)
-                                        .fontWeight(.bold)
-                                        .padding(8)
-                                        .background(RoundedRectangle(cornerRadius: 10).stroke(Color.red, lineWidth: 2))
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(blockedUsers, id: \.self) { user in
+                                HStack {
+                                    Text(user)
+                                        .foregroundColor(.white)
+                                        .font(.title3)
+                                        .fontWeight(.medium)
+                                    
+                                    Spacer()
+                                    
+                                    Button(action: {
+                                        unblockUser(user)
+                                    }) {
+                                        Text("Unblock")
+                                            .foregroundColor(.white)
+                                            .fontWeight(.bold)
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 12)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(Color.white, lineWidth: 2)
+                                            )
+                                    }
                                 }
+                                .padding()
+                                .background(Color.black.opacity(0.6))
+                                .cornerRadius(12)
                             }
-                            .padding(.vertical, 5)
                         }
-                        .listRowBackground(Color.gray.opacity(0.2))
+                        .padding(.horizontal)
                     }
-                    .listStyle(InsetGroupedListStyle())
                 }
                 
                 Spacer()
             }
-            .padding()
         }
     }
     

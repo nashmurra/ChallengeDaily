@@ -16,7 +16,7 @@ struct SettingsView: View {
     @State private var showPastChallenges = false
     @State private var showAchievements = false
     @State private var showPreferences = false
-    @State private var showNotifcatons = false
+    @State private var showNotifications = false
     @State private var showPrivacy = false
     @State private var isPrivate = false
     
@@ -138,7 +138,10 @@ struct SettingsView: View {
                 PreferencesView()
             }
             .navigationDestination(isPresented: $showPrivacy) {
-                PrivacyView(isPrivate: $isPrivate)
+                PrivacyView(userID: userID)
+            }
+            .navigationDestination(isPresented: $showNotifications) {
+                NotificationsView(userID: userID)
             }
         }
         .navigationBarBackButtonHidden(true)

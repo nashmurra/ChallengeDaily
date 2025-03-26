@@ -253,8 +253,17 @@ struct SignupView: View {
                                 "privateAccount": false,
                                 "contentFilter": "Everyone",
                                 "profileImage": "",
-                                "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID
-                                
+                                "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID,
+                                "notifications": [
+                                    "Friend Requests": true,
+                                    "New Followers": true,
+                                    "Friends' Posts": false,
+                                    "Tags": true,
+                                    "Comments": true,
+                                    "Likes": false,
+                                    "Streak Warnings": true,
+                                    "Achievements": true
+                                ]
                             ], merge: true) { error in
                                 if let error = error {
                                     print("Error creating user document: \(error.localizedDescription)")

@@ -85,7 +85,7 @@ struct MainView: View {
                     HStack {
                         Button(action: {
                             withAnimation {
-                                //self.currentViewShowing = "social"
+                               // self.currentViewShowing = "social"
                             }
                         }) {
                             Image(systemName: "person.2.fill")
@@ -101,7 +101,7 @@ struct MainView: View {
                         Spacer()
                         Button(action: {
                             withAnimation {
-                                //self.currentViewShowing = "profile"
+                              //  self.currentViewShowing = "profile"
                             }
                         }) {
                             Image(systemName: "person.crop.circle.fill")
