@@ -251,6 +251,7 @@ struct SignupView: View {
                                 "createdAt": Timestamp(),
                                 "darkMode": true,
                                 "privateAccount": false,
+                                "findFriendsWithContacts": false,
                                 "contentFilter": "Everyone",
                                 "profileImage": "",
                                 "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID,

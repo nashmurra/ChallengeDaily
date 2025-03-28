@@ -12,7 +12,7 @@ struct PrivacyView: View {
     @State private var isPrivate: Bool = false
     @State private var findFriendsWithContacts: Bool = false
     @State private var showBlockedUsers = false
-    var userID: String  // User ID for Firestore storage
+    var userID: String
 
     var body: some View {
         ZStack {
@@ -22,7 +22,6 @@ struct PrivacyView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 30) {
-                // Title
                 Text("Privacy")
                     .font(.system(size: 36, weight: .bold))
                     .foregroundColor(.white)
@@ -31,10 +30,52 @@ struct PrivacyView: View {
                     .padding(.top, 60)
                 
                 VStack(spacing: 15) {
-                    privacyToggle(title: "Private Account", description: "Only approved followers can see your content.", isOn: $isPrivate)
-                    privacyToggle(title: "Find Friends with Contacts", description: "Find and connect with friends using your contacts.", isOn: $findFriendsWithContacts)
+                    Toggle(isOn: Binding(
+                        get: { self.isPrivate },
+                        set: { newValue in
+                            self.isPrivate = newValue
+                            savePrivacySettings()
+                        }
+                    )) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Private Account")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            Text("Only approved followers can see your content.")
+                                .font(.footnote)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+                    .padding()
+                    .background(Color.black.opacity(0.6))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+
+                    Toggle(isOn: Binding(
+                        get: { self.findFriendsWithContacts },
+                        set: { newValue in
+                            self.findFriendsWithContacts = newValue
+                            savePrivacySettings()
+                        }
+                    )) {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("Find Friends with Contacts")
+                                .font(.title3)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                            Text("Find and connect with friends using your contacts.")
+                                .font(.footnote)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+                    .padding()
+                    .background(Color.black.opacity(0.6))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
                     
-                    // Blocked Users Button
                     Button(action: { showBlockedUsers = true }) {
                         HStack {
                             Text("Blocked Users")
@@ -53,25 +94,6 @@ struct PrivacyView: View {
                 }
                 
                 Spacer()
-                
-                // Save Settings Button
-                Button(action: {
-                    savePrivacySettings()
-                }) {
-                    Text("Save Settings")
-                        .foregroundColor(Color.white)
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .frame(maxWidth: .infinity)
-                        .padding(17)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.blue.opacity(0.8))
-                        )
-                        .padding(.horizontal, 25)
-                }
-                
-                Spacer()
             }
         }
         .sheet(isPresented: $showBlockedUsers) {
@@ -82,28 +104,7 @@ struct PrivacyView: View {
         }
     }
     
-    // Custom Toggle View
-    func privacyToggle(title: String, description: String, isOn: Binding<Bool>) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            Toggle(isOn: isOn) {
-                Text(title)
-                    .font(.title3)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-            }
-            .toggleStyle(SwitchToggleStyle(tint: .blue))
-            
-            Text(description)
-                .font(.footnote)
-                .foregroundColor(.white.opacity(0.6))
-        }
-        .padding()
-        .background(Color.black.opacity(0.6))
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-    
-    // Save privacy settings to Firestore
+
     func savePrivacySettings() {
         let db = Firestore.firestore()
         db.collection("users").document(userID).setData([
@@ -118,15 +119,18 @@ struct PrivacyView: View {
         }
     }
 
-    // Load privacy settings from Firestore
+    
     func loadPrivacySettings() {
         let db = Firestore.firestore()
         db.collection("users").document(userID).getDocument { document, error in
             if let document = document, document.exists, let data = document.data() {
-                isPrivate = data["isPrivate"] as? Bool ?? false
-                findFriendsWithContacts = data["findFriendsWithContacts"] as? Bool ?? false
+                DispatchQueue.main.async {
+                    self.isPrivate = data["isPrivate"] as? Bool ?? false
+                    self.findFriendsWithContacts = data["findFriendsWithContacts"] as? Bool ?? false
+                }
             }
         }
     }
 }
+
 
