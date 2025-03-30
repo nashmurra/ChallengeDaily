@@ -1,114 +1,141 @@
-import SwiftUI
-import FirebaseAuth
 import PhotosUI
+import SwiftUI
 
 struct MainView: View {
     //@Binding var currentViewShowing: String
     
+    
+
     @State private var showProfile = false
     @State private var showSocial = false
     @State private var timeRemaining = 0
-    @State private var showCamera: Bool = false
+    @State var showCamera: Bool = false
     @State private var selectedImage: UIImage? = nil
     @State private var navigateToPostView: Bool = false
+
+    @State private var selectedView: String = "Dashboard"
+    
+    //@State private var selectedImage: UIImage? = nil
+    //@State private var navigateToPostView: Bool = false
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
     @StateObject private var postViewModel = PostViewModel()
     @StateObject private var userViewModel = UserViewModel()
+    @State var currentChallenge: Challenge?  // Make it optional
+
     @Namespace var namespace
     @State var show = false
-    @State var currentChallenge: Challenge?  // Make it optional
 
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                Color.backgroundDark
+                Color.creamColor
                     .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 0) {
-                        Spacer().frame(height: 80)
-
-                        VStack {
+                VStack {
+                    
+                    Spacer().frame(height: 90)
+                    VStack {
+                        HStack {
+                            Spacer()
+                            
+                            Button(action: { selectedView = "Dashboard" }) {
+                                Text("Dashboard")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(
+                                        selectedView == "Dashboard"
+                                        ? Color.primaryAccent : Color.primaryAccent.opacity(0.3)
+                                    )
+                                    .padding(.top, 10)
+                                    .padding(.bottom, 10)
+                                    .background(
+                                        Color.clear
+                                    )
+                                    .cornerRadius(10)
+                            }
+                            
                             Spacer()
 
-                            VStack {
-                                Text(timeString(from: timeRemaining))
-                                    .font(.system(size: 50, weight: .heavy, design: .rounded))
-                                    .fontWeight(.bold)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .textCase(.uppercase)
-                                    .padding(60)
-                                    .offset(y: 130)
-
-                                Text("Daily Challenge Countdown")
-                                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .textCase(.uppercase)
-                                    .padding(60)
-                                    .offset(y: 0)
-                            }
-                        }
-                        .frame(height: 800)
-                        .background(
-                            RoundedRectangle(cornerRadius: 0, style: .continuous)
-                                .fill(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: [Color.pinkColor, Color.redColor]),
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+                            Button(action: { selectedView = "Timeline" }) {
+                                Text("Timeline")
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(
+                                        selectedView == "Timeline"
+                                            ? Color.primaryAccent : Color.primaryAccent.opacity(0.3)
                                     )
-                                )
-                        )
-                        .padding(.top, -620)
-
-                        if let challenge = currentChallenge {
-                            if !show {
-                                ChallengeItem(namespace: namespace, show: $show, currentChallange: challenge)
-                            } else {
-                                ChallengeView(namespace: namespace, show: $show, currentChallange: challenge)
+                                    .padding(.top, 10)
+                                    .padding(.bottom, 10)
+                                    .background(
+                                        Color.clear
+                                    )
+                                    .cornerRadius(10)
                             }
+                            
+                            Spacer()
+                        }
+                        //.padding()
+                        
+                        Divider()
+
+                        Spacer()
+
+                        if selectedView == "Dashboard" {
+                            if let challenge = currentChallenge {
+                                DashboardView(showCamera: $showCamera, currentChallange: currentChallenge!)
+                            }
+                        } else {
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    ForEach(postViewModel.viewModelPosts) { post in
+                                        FeedView(post: post)
+                                    }
+                                    
+                                }
+                            }
+                            .scrollBounceBehavior(.basedOnSize)
                         }
 
-                        VStack(spacing: 0) {
-                            ForEach(postViewModel.viewModelPosts) { post in
-                                FeedView(post: post)
-                            }
-                        }
+                        Spacer()
                     }
+                    //.safeAreaInset(edge: .top) { Color.clear.frame(height: 80) }
+                    .background(
+                        Color.whiteColor
+                    )
+
+                    
                 }
-                .scrollBounceBehavior(.basedOnSize)
 
                 VStack {
                     Spacer().frame(height: 80)
                     HStack {
-                        Button(action: {
-                            withAnimation {
-                               // self.currentViewShowing = "social"
-                            }
-                        }) {
-                            Image(systemName: "person.2.fill")
-                                .resizable()
-                                .frame(width: 35, height: 25)
-                                .foregroundColor(.white)
-                        }
+                        //                        Button(action: {
+                        //                            withAnimation {
+                        //                                //self.currentViewShowing = "social"
+                        //                            }
+                        //                        }) {
+                        //                            Image(systemName: "person.2.fill")
+                        //                                .resizable()
+                        //                                .frame(width: 35, height: 25)
+                        //                                .foregroundColor(.white)
+                        //                        }
                         Spacer()
-                        Text("Today's Challenge")
-                            .font(.headline.weight(.semibold))
-                            .foregroundColor(.white)
+                        Text("TC.")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.primaryAccent)
                             .textCase(.uppercase)
                         Spacer()
-                        Button(action: {
-                            withAnimation {
-                              //  self.currentViewShowing = "profile"
-                            }
-                        }) {
-                            Image(systemName: "person.crop.circle.fill")
-                                .resizable()
-                                .frame(width: 30, height: 30)
-                                .foregroundColor(.white)
-                        }
+                        //                        Button(action: {
+                        //                            withAnimation {
+                        //                                //self.currentViewShowing = "profile"
+                        //                            }
+                        //                        }) {
+                        //                            Image(systemName: "person.crop.circle.fill")
+                        //                                .resizable()
+                        //                                .frame(width: 30, height: 30)
+                        //                                .foregroundColor(.white)
+                        //                        }
                     }
                     .padding(.horizontal)
                     .frame(height: 60)
@@ -119,31 +146,13 @@ struct MainView: View {
 
                 VStack {
                     Spacer()
-                    Button(action: {
-                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                            showCamera = true
-                        } else {
-                            print("Camera not available")
-                        }
-                    }) {
-                        Image(systemName: "plus")
-                            .resizable()
-                            .frame(width: 20, height: 20)
-                            .padding()
-                            .background(Color.white)
-                            .foregroundColor(.black)
-                            .clipShape(Circle())
-                            .shadow(radius: 5)
-                    }
-                    .offset(y: -20)
+                    
                 }
             }
             .ignoresSafeArea(edges: .top)
-            .navigationDestination(isPresented: $showProfile) {}
-            .navigationDestination(isPresented: $showSocial) {}
             .sheet(isPresented: $showCamera) {
                 CameraView(selectedImage: $selectedImage)
-                    .preferredColorScheme(.dark)
+                    //.preferredColorScheme(.dark)
                     .onDisappear {
                         print("📸 selectedImage after camera: \(String(describing: selectedImage))")
                         if selectedImage != nil {
@@ -156,7 +165,7 @@ struct MainView: View {
             .navigationDestination(isPresented: $navigateToPostView) {
                 if let image = selectedImage {
                     PostView(image: image)
-                        .preferredColorScheme(.dark)
+                        //.preferredColorScheme(.dark)
                 } else {
                     Text("⚠️ No image available")
                 }
@@ -173,10 +182,16 @@ struct MainView: View {
                     updateCountdown()
                 }
             }
+            .onReceive(timer) { _ in
+                if timeRemaining > 0 {
+                    timeRemaining -= 1
+                } else {
+                    updateCountdown()
+                }
+            }
         }
     }
 
-    
     func setCurrentChallenge() {
         userViewModel.fetchUserChallengeID { challengeID in
             if let challengeID = challengeID {
@@ -223,13 +238,14 @@ struct MainView: View {
         if let nextReset = calendar.date(from: components) {
             let timeDifference = nextReset.timeIntervalSince(now)
             timeRemaining = max(0, Int(timeDifference)) // Ensure no negative value
-            
+
             // Trigger the reset if the time remaining is 0 (i.e., reset time has passed)
             if timeRemaining == 0 {
                 onCountdownReset()
             }
         }
     }
+    
 
 
     func timeString(from seconds: Int) -> String {
@@ -238,4 +254,11 @@ struct MainView: View {
         let seconds = seconds % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
     }
+}
+
+
+
+#Preview {
+    ContentView()
+        .preferredColorScheme(.light)
 }

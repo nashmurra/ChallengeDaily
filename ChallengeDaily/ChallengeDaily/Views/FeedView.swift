@@ -1,54 +1,88 @@
+//
+//  FeedView.swift
+//  DesignChallenge
+//
+//  Created by HPro2 on 2/27/25.
+//
+
 import SwiftUI
 
 struct FeedView: View {
     var post: Post
-
+    
     var body: some View {
+        
         ZStack {
-            Color.backgroundDark
-                .ignoresSafeArea()
-
-            VStack {
-                HStack {
+            
+            VStack{
+                
+                HStack{
+                    
                     Image(systemName: "person.crop.circle.fill")
                         .resizable()
+                        .opacity(0.4)
                         .frame(width: 30, height: 30)
-                        .foregroundColor(Color.whiteText)
-
-                    VStack {
+                        //.foregroundColor(Color.whiteText)
+                    
+                    VStack{
                         Text(post.username)
                             .font(.callout)
                             .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment:.leading)
+                            .opacity(0.5)
 
                         Text(relativeTime(post.createdAt))
                             .font(.footnote)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fontWeight(.regular)
+                            .frame(maxWidth: .infinity, alignment:.leading)
+                            .opacity(0.5)
+                        
+                        
+                        
                     }
-
+                    
                     Spacer()
+                    
                     Image(systemName: "ellipsis")
                         .resizable()
                         .frame(width: 20, height: 5)
-                        .foregroundColor(Color.whiteText)
+                        .opacity(0.4)
+                        
+                    //.padding(.horizontal)
+                    
                 }
                 .padding(.horizontal)
+                
+                
+                VStack {
+                    
+                    if let uiImage = decodeBase64ToImage(post.image) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .cornerRadius(12)
+                            .frame(width: 400, height: 400)
+                    } else {
+                        Text("Failed to load image")
+                            .foregroundColor(.red)
+                            .frame(height: 400)
+                    }
+                    
 
-                if let uiImage = decodeBase64ToImage(post.image) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFit()
-                        .cornerRadius(12)
-                        .frame(height: 400)
-                } else {
-                    Text("Failed to load image")
-                        .foregroundColor(.red)
-                        .frame(height: 400)
                 }
-
-                Spacer().frame(height: 30)
+                
+                Spacer().frame(height: 15)
+                
+                Divider()
+                
+                Spacer().frame(height: 15)
+                
+                
+                
             }
         }
+        
+
     }
     
     func relativeTime(_ date: Date) -> String {
@@ -66,4 +100,9 @@ struct FeedView: View {
         }
         return image
     }
+}
+
+#Preview {
+    ContentView()
+        .preferredColorScheme(.light)
 }
