@@ -20,7 +20,7 @@ struct SettingsView: View {
         @State private var showPrivacy = false
         @State private var isPrivate = false
 
-        @Binding var currentViewShowing: String
+        //@Binding var currentViewShowing: String
 
         var body: some View {
             NavigationView {
@@ -81,7 +81,7 @@ struct SettingsView: View {
                                         
                                         withAnimation {
                                             userID = ""
-                                            self.currentViewShowing = "login"
+                                            //self.currentViewShowing = "login"
                                         }
                                     } catch let signOutError as NSError {
                                         print("Error signing out: %@", signOutError)
@@ -108,7 +108,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { self.currentViewShowing = "profile" }) {
+                    Button(action: { /*self.currentViewShowing = "profile"*/ }) {
                         HStack {
                             Image(systemName: "chevron.left")
                                 .foregroundColor(.white)
