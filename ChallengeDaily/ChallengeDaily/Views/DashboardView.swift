@@ -25,7 +25,7 @@ struct DashboardView: View {
             HStack {
                 Image(systemName: "face.smiling")
                     .resizable()
-                    .foregroundColor(Color.accentColor)
+                    .foregroundColor(Color.red)
                     .frame(width: 90, height: 90, alignment: .leading)
                     
                 
@@ -39,7 +39,7 @@ struct DashboardView: View {
             Text(currentChallange.title)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(Color.primaryAccent)
+                .foregroundColor(Color.red)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
                 .padding(.horizontal)
@@ -47,7 +47,7 @@ struct DashboardView: View {
             Text("Daily Challenge")
                 .font(.body)
                 .fontWeight(.semibold)
-                .opacity(0.5)
+                .foregroundColor(Color.gray)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
                 .padding(.horizontal)
@@ -70,7 +70,7 @@ struct DashboardView: View {
             Text(currentChallange.instructions)
                 .font(.callout)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .opacity(0.6)
+                .foregroundColor(Color.gray)
                 .padding(.horizontal)
                 .padding(.horizontal)
 
@@ -84,14 +84,14 @@ struct DashboardView: View {
                 }
             } label: {
                 Text("Make a Post")
-                    .foregroundColor(Color.primaryAccent)
+                    .foregroundColor(Color.red)
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .frame(maxWidth: .infinity)
                     .padding(17)
                     .background(
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.primaryAccent, lineWidth: 3))
+                            .stroke(Color.red, lineWidth: 3))
                     .padding(.horizontal, 80)
             }
 

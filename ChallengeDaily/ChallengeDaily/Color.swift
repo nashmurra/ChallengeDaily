@@ -12,4 +12,9 @@ extension Color {
     static let redColor = Color(red: 255/255, green: 113/255, blue: 120/255) // #FFB84D, 255, 113, 120
     static let whiteColor = Color(red: 255/255, green: 255/255, blue: 255/255) // 253, 98, 122
     static let creamColor = Color(red: 248/255, green: 249/255, blue: 244/255) // 248, 249, 244
+    static let grayText = Color(red: 179/255, green: 179/255, blue: 179/255) // 248, 249, 244
+    static let disabledText = Color(red: 248/255, green: 249/255, blue: 244/255) // 248, 249, 244
+    static let darkWhiteColor = Color(red: 37/255, green: 37/255, blue: 37/255) // A softer gray to avoid harsh contrast
+    static let darkCreamColor = Color(red: 30/255, green: 30/255, blue: 30/255) // A deep earthy tone to match dark mode
+
 }

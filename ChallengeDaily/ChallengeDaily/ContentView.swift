@@ -16,7 +16,7 @@ struct ContentView: View {
     @State private var navigateToPostView: Bool = false
 
     init() {
-        UITabBar.appearance().backgroundColor = UIColor(Color.creamColor)
+       // UITabBar.appearance().backgroundColor = UIColor(Color.creamColor)
     }
 
     var body: some View {
@@ -28,36 +28,38 @@ struct ContentView: View {
 
                 ZStack {
 
-                    Color.creamColor.edgesIgnoringSafeArea(.all)
-
+                    //Color.black.opacity(0.2).ignoresSafeArea()
+                    
                     TabView {
 
                         MainView()
-                            .preferredColorScheme(.dark)
+                            //.preferredColorScheme(.dark)
                             .tabItem {
                                 Label("", systemImage: "house.fill")
                             }
 
                         SocialView()
-                            .preferredColorScheme(.dark)
+                           // .preferredColorScheme(.dark)
                             .tabItem {
                                 Label("", systemImage: "magnifyingglass")
                             }
 
                         ProfileView()
-                            .preferredColorScheme(.dark)
+                            //.preferredColorScheme(.dark)
                             .tabItem {
                                 Label("", systemImage: "person.crop.circle")
                             }
 
                         SettingsView()
-                            .preferredColorScheme(.dark)
+                           //.preferredColorScheme(.dark)
                             .tabItem {
                                 Label("", systemImage: "gear")
                             }
                     }
-                    .accentColor(Color.primaryAccent)
-                    .preferredColorScheme(.light)
+                    .accentColor(Color.red)
+                    .background()
+                    .preferredColorScheme(.dark)
+                    
 
                 }
             }

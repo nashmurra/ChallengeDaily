@@ -30,8 +30,12 @@ struct MainView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                Color.creamColor
-                    .ignoresSafeArea()
+                
+                Rectangle()
+                    .fill(.thinMaterial)
+                                .ignoresSafeArea()
+                //Color.creamColor
+                    //.ignoresSafeArea()
 
                 VStack {
                     
@@ -45,7 +49,7 @@ struct MainView: View {
                                     .fontWeight(.semibold)
                                     .foregroundColor(
                                         selectedView == "Dashboard"
-                                        ? Color.primaryAccent : Color.primaryAccent.opacity(0.3)
+                                        ? Color.red : Color.red.opacity(0.3)
                                     )
                                     .padding(.top, 10)
                                     .padding(.bottom, 10)
@@ -62,7 +66,7 @@ struct MainView: View {
                                     .fontWeight(.semibold)
                                     .foregroundColor(
                                         selectedView == "Timeline"
-                                            ? Color.primaryAccent : Color.primaryAccent.opacity(0.3)
+                                            ? Color.red : Color.red.opacity(0.3)
                                     )
                                     .padding(.top, 10)
                                     .padding(.bottom, 10)
@@ -82,7 +86,7 @@ struct MainView: View {
 
                         if selectedView == "Dashboard" {
                             if let challenge = currentChallenge {
-                                DashboardView(showCamera: $showCamera, currentChallange: currentChallenge!)
+                                DashboardView(showCamera: $showCamera, currentChallange: challenge)
                             }
                         } else {
                             ScrollView {
@@ -99,9 +103,7 @@ struct MainView: View {
                         Spacer()
                     }
                     //.safeAreaInset(edge: .top) { Color.clear.frame(height: 80) }
-                    .background(
-                        Color.whiteColor
-                    )
+                    .background(.ultraThinMaterial)
 
                     
                 }
@@ -123,7 +125,7 @@ struct MainView: View {
                         Text("TC.")
                             .font(.title3)
                             .fontWeight(.bold)
-                            .foregroundColor(Color.primaryAccent)
+                            .foregroundColor(Color.red)
                             .textCase(.uppercase)
                         Spacer()
                         //                        Button(action: {
@@ -189,6 +191,7 @@ struct MainView: View {
                     updateCountdown()
                 }
             }
+           
         }
     }
 

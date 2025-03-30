@@ -20,7 +20,7 @@ struct FeedView: View {
                     
                     Image(systemName: "person.crop.circle.fill")
                         .resizable()
-                        .opacity(0.4)
+                        .foregroundColor(Color.gray)
                         .frame(width: 30, height: 30)
                         //.foregroundColor(Color.whiteText)
                     
@@ -29,13 +29,13 @@ struct FeedView: View {
                             .font(.callout)
                             .fontWeight(.bold)
                             .frame(maxWidth: .infinity, alignment:.leading)
-                            .opacity(0.5)
+                            .foregroundColor(Color.gray)
 
                         Text(relativeTime(post.createdAt))
                             .font(.footnote)
                             .fontWeight(.regular)
                             .frame(maxWidth: .infinity, alignment:.leading)
-                            .opacity(0.5)
+                            .foregroundColor(Color.gray)
                         
                         
                         
@@ -46,7 +46,7 @@ struct FeedView: View {
                     Image(systemName: "ellipsis")
                         .resizable()
                         .frame(width: 20, height: 5)
-                        .opacity(0.4)
+                        .foregroundColor(Color.gray)
                         
                     //.padding(.horizontal)
                     
