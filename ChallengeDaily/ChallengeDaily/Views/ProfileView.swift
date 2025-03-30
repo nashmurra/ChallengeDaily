@@ -9,7 +9,7 @@ struct ProfileView: View {
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
     
-    @Binding var currentViewShowing: String
+    //@Binding var currentViewShowing: String
 
     // Add state variables for username and email
     @State private var username: String = ""
@@ -31,7 +31,7 @@ struct ProfileView: View {
                         Button(action: {
                             //presentationMode.wrappedValue.dismiss() // Navigate back
                             withAnimation {
-                                self.currentViewShowing = "main"
+                                //self.currentViewShowing = "main"
                             }
                         }) {
                             HStack {
@@ -45,7 +45,7 @@ struct ProfileView: View {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
                             withAnimation {
-                                self.currentViewShowing = "settings"
+                                //self.currentViewShowing = "settings"
                             }
                             //showSettings = true
                         }) {

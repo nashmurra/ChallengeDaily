@@ -28,18 +28,13 @@ struct AuthView: View {
                 }
                  */
             } else {
+                
                 if currentViewShowing == "social" {
-                    SocialView(currentViewShowing: $currentViewShowing)
-                        .preferredColorScheme(.dark)
-                        .transition(.move(edge: .bottom))
+
                 } else if currentViewShowing == "profile" {
-                    ProfileView(currentViewShowing: $currentViewShowing)
-                        .preferredColorScheme(.dark)
-                        .transition(.move(edge: .bottom))
+                    
                 } else if currentViewShowing == "settings" {
-                    SettingsView(currentViewShowing: $currentViewShowing)
-                        .preferredColorScheme(.dark)
-                        .transition(.move(edge: .bottom))
+                    
                 } else {
                     StartView()
                         .preferredColorScheme(.dark)

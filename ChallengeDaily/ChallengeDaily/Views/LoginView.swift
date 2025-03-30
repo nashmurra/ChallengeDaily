@@ -7,7 +7,7 @@ struct LoginView: View {
     
     @State private var email: String = ""
     @State private var password: String = ""
-    @State private var isLoggedIn = false
+    @Binding var isPresented: Bool  // <-- Add binding to control dismissal
     
     private func isValidPassword(_ password: String) -> Bool {
         let passwordRegex = NSPredicate(format: "SELF MATCHES %@", "^(?=.*[a-z])(?=.*[$@$#!%*?&])(?=.*[A-Z]).{6,}$")
@@ -17,16 +17,14 @@ struct LoginView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                
                 Image("BackgroundScreen")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-                
+
                 VStack {
-                    
                     Spacer().frame(height: 20)
-                    
+
                     Text("Sign In")
                         .font(.system(size: 50, weight: .heavy))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -34,53 +32,39 @@ struct LoginView: View {
                         .padding(.top, 50)
                         .padding()
                         .padding(.horizontal)
-                    
+
                     Spacer().frame(height: 50)
-                    
+
                     VStack {
-                        
-                        VStack(spacing: 0) {
-                            Spacer().frame(height: 10)
-                            
-                            VStack {
-                                
-                                Text("Email")
-                                    .font(.footnote)
-                                    .fontWeight(.medium)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .foregroundColor(Color.primaryAccent)
-                                    .padding(.top)
-                                    .padding(.leading)
-                                
-                                HStack {
-                                    TextField("Email", text: $email)
-                                        .foregroundColor(Color.white)
-                                        .disableAutocorrection(true)
-                                        .autocapitalization(.none)
-                                    
-                                    Spacer()
-                                    
-                                    if email.count != 0 {
-                                        Image(systemName: "checkmark")
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.green)
-                                    }
+                        VStack {
+                            Text("Email")
+                                .font(.footnote)
+                                .fontWeight(.medium)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .foregroundColor(Color.primaryAccent)
+                                .padding(.top)
+                                .padding(.leading)
+
+                            HStack {
+                                TextField("Email", text: $email)
+                                    .foregroundColor(Color.white)
+                                    .disableAutocorrection(true)
+                                    .autocapitalization(.none)
+
+                                Spacer()
+
+                                if email.count != 0 {
+                                    Image(systemName: "checkmark")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.green)
                                 }
-                                .padding(.bottom)
-                                .padding(.horizontal)
-                                .padding(.top, -10)
-                                
                             }
-                            .background(
-                                RoundedRectangle(cornerRadius: 0)
-                                    .fill(Color.dark)
-                            )
                             .padding()
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.dark))
                             .padding(.horizontal)
                         }
-                        
+
                         VStack {
-                            
                             Text("Password")
                                 .font(.footnote)
                                 .fontWeight(.medium)
@@ -88,33 +72,26 @@ struct LoginView: View {
                                 .foregroundColor(Color.primaryAccent)
                                 .padding(.top)
                                 .padding(.leading)
-                            
+
                             HStack {
                                 SecureField("Password", text: $password)
                                     .foregroundColor(Color.white)
                                     .disableAutocorrection(true)
                                     .autocapitalization(.none)
-                                
+
                                 Spacer()
-                                
+
                                 if password.count != 0 {
                                     Image(systemName: "checkmark")
                                         .fontWeight(.bold)
                                         .foregroundColor(.green)
                                 }
                             }
-                            .padding(.bottom)
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.dark))
                             .padding(.horizontal)
-                            .padding(.top, -10)
-                            
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 0)
-                                .fill(Color.dark)
-                        )
-                        .padding()
-                        .padding(.horizontal)
-                        
+
                         Button(action: {
                             // Forgot Password Action
                         }) {
@@ -124,22 +101,21 @@ struct LoginView: View {
                                 .frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .padding(.horizontal, 30)
-                        .padding(.top, -10)
-                        
+
                         Spacer().frame(height: 40)
-                        
+
                         Button {
                             Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
                                 if let error = error {
                                     print(error.localizedDescription)
                                     return
                                 }
-                                
+
                                 if let authResult = authResult {
                                     print(authResult.user.uid)
                                     withAnimation {
                                         userID = authResult.user.uid
-                                        isLoggedIn = true // Trigger navigation
+                                        isPresented = false  // <-- Dismiss the sheet on successful login
                                     }
                                 }
                             }
@@ -155,13 +131,6 @@ struct LoginView: View {
                                         .fill(Color.secondaryAccent))
                                 .padding(.horizontal, 25)
                         }
-                        
-                        // Hidden NavigationLink triggered when isLoggedIn is true
-                        NavigationLink(destination: MainView(), isActive: $isLoggedIn) {
-                            EmptyView()
-                        }
-                        
-                        Spacer()
                     }
                 }
             }

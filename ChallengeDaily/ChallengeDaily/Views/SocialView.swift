@@ -13,7 +13,7 @@ struct SocialView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var searchText: String = ""
     
-    @Binding var currentViewShowing: String
+    //@Binding var currentViewShowing: String
 
     let fakeProfiles = [
         "KongSun", "Bob Smith", "Charlie Brown",

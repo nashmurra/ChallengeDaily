@@ -5,9 +5,9 @@
 //  Created by HPro2 on 1/24/25.
 //
 
-import SwiftUI
 import FirebaseAuth
 import PhotosUI
+import SwiftUI
 
 struct ContentView: View {
     @AppStorage("uid") var userID: String = ""
@@ -15,70 +15,53 @@ struct ContentView: View {
     @State private var selectedImage: UIImage? = nil
     @State private var navigateToPostView: Bool = false
 
+    init() {
+        UITabBar.appearance().backgroundColor = UIColor(Color.creamColor)
+    }
+
     var body: some View {
+
         NavigationStack {
-            //if userID == "" {
+            if userID == "" {
                 AuthView()
-            //} else {
-                /*
+            } else {
+
                 ZStack {
+
+                    Color.creamColor.edgesIgnoringSafeArea(.all)
+
                     TabView {
+
                         MainView()
                             .preferredColorScheme(.dark)
                             .tabItem {
-                                Label("Home", systemImage: "house.fill")
+                                Label("", systemImage: "house.fill")
                             }
 
-                        AchievementsView()
+                        SocialView()
                             .preferredColorScheme(.dark)
                             .tabItem {
-                                Label("Achievements", systemImage: "star.fill")
+                                Label("", systemImage: "magnifyingglass")
                             }
-                    }
 
-                    VStack {
-                        Spacer()
-                        Button(action: {
-                            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                                showCamera = true
-                            } else {
-                                print("Camera not available")
-                            }
-                        }) {
-                            Image(systemName: "plus")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                                .padding()
-                                .background(Color.white)
-                                .foregroundColor(.black)
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
-                        }
-                        .offset(y: -20)
-                    }
-                }
-                .sheet(isPresented: $showCamera) {
-                    CameraView(selectedImage: $selectedImage)
-                        .preferredColorScheme(.dark)
-                        .onDisappear {
-                            print("📸 selectedImage after camera: \(String(describing: selectedImage))")
-                            if selectedImage != nil {
-                                DispatchQueue.main.async {
-                                    navigateToPostView = true
-                                }
-                            }
-                        }
-                }
-                .navigationDestination(isPresented: $navigateToPostView) {
-                    if let image = selectedImage {
-                        PostView(image: image)
+                        ProfileView()
                             .preferredColorScheme(.dark)
-                    } else {
-                        Text("⚠️ No image available")
+                            .tabItem {
+                                Label("", systemImage: "person.crop.circle")
+                            }
+
+                        SettingsView()
+                            .preferredColorScheme(.dark)
+                            .tabItem {
+                                Label("", systemImage: "gear")
+                            }
                     }
+                    .accentColor(Color.primaryAccent)
+                    .preferredColorScheme(.light)
+
                 }
-                 */
-           // }
+            }
+
         }
     }
 }
