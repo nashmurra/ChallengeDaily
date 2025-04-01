@@ -42,14 +42,14 @@ struct ContentView: View {
                                 Label("Home", systemImage: "house.fill")
                             }
 
-                        SocialView()
+                        DetailView()
                            // .preferredColorScheme(.dark)
                             .tabItem {
                                 Label("Explore", systemImage: "target")
                             }
 
                         
-                        SettingsView()
+                        ChallengeDashboardView()
                            //.preferredColorScheme(.dark)
                             .tabItem {
                                 Label("Challenge", systemImage: "star.fill")
