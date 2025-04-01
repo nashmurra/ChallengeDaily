@@ -9,38 +9,53 @@ struct StartView: View {
     var body: some View {
         ZStack {
             // Background image covering the entire screen
-            Image("BackgroundScreen")
+            Image("appBackground")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
 
             VStack {
-                Spacer().frame(height: 10)
-
-                Text("TC.")
-                    .font(.system(size: 100, weight: .bold, design: .default))
+                Image(systemName: "target")
+                    .resizable()
+                    .frame(width: 70, height: 70)
                     .foregroundColor(Color.white)
-
+                
+                Spacer().frame(height: 10)
+                
+                HStack(spacing: 0) {
+                    Text("todays")
+                        .font(.largeTitle)
+                        .fontWeight(.light)
+                        .foregroundColor(Color.white)
+                    
+                    Text("challenge")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color.white)
+                }
+                
                 Spacer().frame(height: 100)
 
                 Text("Welcome!")
-                    .font(.system(size: 40, weight: .bold, design: .default))
+                    .font(.title2)
                     .foregroundColor(Color.white)
-
+                
                 Spacer().frame(height: 30)
 
                 Button {
                     self.showingLoginView.toggle()
                 } label: {
                     Text("Sign In")
-                        .foregroundColor(Color.white)
+                        .foregroundColor(Color.black).opacity(0.6)
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                         .padding(17)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.secondaryAccent, lineWidth: 2))
+                        .background(
+                            LinearGradient(gradient: Gradient(colors: [Color.tealColor, Color.greenColor]),
+                                           startPoint: .leading, endPoint: .trailing)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
                         .padding(.horizontal, 55)
                 }
                 .sheet(isPresented: $showingLoginView) {
@@ -58,9 +73,14 @@ struct StartView: View {
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                         .padding(17)
-                        .background(
+                        .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.secondaryAccent))
+                                .stroke(
+                                    LinearGradient(gradient: Gradient(colors: [Color.tealColor, Color.greenColor]),
+                                                   startPoint: .leading, endPoint: .trailing),
+                                    lineWidth: 2
+                                )
+                        )
                         .padding(.horizontal, 55)
                 }
                 .sheet(isPresented: $showingSignUpView) {

@@ -16,8 +16,10 @@ struct ContentView: View {
     @State private var navigateToPostView: Bool = false
 
     init() {
-       // UITabBar.appearance().backgroundColor = UIColor(Color.creamColor)
+        UITabBar.appearance().backgroundColor = UIColor(Color.white)
+        UITabBar.appearance().unselectedItemTintColor = UIColor(Color.darkBlueColor) // Set disabled tabs to red
     }
+
 
     var body: some View {
 
@@ -27,6 +29,8 @@ struct ContentView: View {
             } else {
 
                 ZStack {
+                    
+                    Color.white.ignoresSafeArea(.all)
 
                     //Color.black.opacity(0.2).ignoresSafeArea()
                     
@@ -35,30 +39,31 @@ struct ContentView: View {
                         MainView()
                             //.preferredColorScheme(.dark)
                             .tabItem {
-                                Label("", systemImage: "house.fill")
+                                Label("Home", systemImage: "house.fill")
                             }
 
                         SocialView()
                            // .preferredColorScheme(.dark)
                             .tabItem {
-                                Label("", systemImage: "magnifyingglass")
+                                Label("Explore", systemImage: "target")
                             }
 
-                        ProfileView()
-                            //.preferredColorScheme(.dark)
-                            .tabItem {
-                                Label("", systemImage: "person.crop.circle")
-                            }
-
+                        
                         SettingsView()
                            //.preferredColorScheme(.dark)
                             .tabItem {
-                                Label("", systemImage: "gear")
+                                Label("Challenge", systemImage: "star.fill")
+                            }
+                        
+                        ProfileView()
+                            //.preferredColorScheme(.dark)
+                            .tabItem {
+                                Label("Profile", systemImage: "person.fill")
                             }
                     }
-                    .accentColor(Color.red)
+                    .accentColor(Color.pinkColor)
                     .background()
-                    .preferredColorScheme(.light)
+                    .preferredColorScheme(.dark)
                     
 
                 }

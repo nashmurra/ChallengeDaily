@@ -17,31 +17,44 @@ struct LoginView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Image("BackgroundScreen")
+                Image("appBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
 
                 VStack {
-                    Spacer().frame(height: 20)
-
-                    Text("Sign In")
-                        .font(.system(size: 50, weight: .heavy))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundColor(Color.whiteText)
-                        .padding(.top, 50)
-                        .padding()
-                        .padding(.horizontal)
+                    Spacer().frame(height: 120)
+                    
+                    Image(systemName: "target")
+                        .resizable()
+                        .frame(width: 70, height: 70)
+                        .foregroundColor(Color.white)
+                    
+                    Spacer().frame(height: 10)
+                    
+                    HStack(spacing: 0) {
+                        Text("sign")
+                            .font(.largeTitle)
+                            .fontWeight(.light)
+                            .foregroundColor(Color.white)
+                        
+                        Text("in")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.white)
+                    }
 
                     Spacer().frame(height: 50)
 
-                    VStack {
+                    VStack(spacing: 0) {
+                        Spacer().frame(height: 10)
+                        
                         VStack {
                             Text("Email")
                                 .font(.footnote)
-                                .fontWeight(.medium)
+                                .fontWeight(.light)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.primaryAccent)
+                                .foregroundColor(Color.gray)
                                 .padding(.top)
                                 .padding(.leading)
 
@@ -59,17 +72,26 @@ struct LoginView: View {
                                         .foregroundColor(.green)
                                 }
                             }
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.dark))
                             .padding(.horizontal)
+                           // .padding(.top, -10)
+                            .padding(.bottom, 1)
+                            
+                            // More visible divider
+                            Divider()
+                                .background(Color.white) // Make it more visible
+                                .frame(height: 1) // Adjust thickness
+                                .padding(.horizontal)
                         }
+                        .background(Color.clear)
+                        .padding()
+                        .padding(.horizontal)
 
                         VStack {
                             Text("Password")
                                 .font(.footnote)
-                                .fontWeight(.medium)
+                                .fontWeight(.light)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.primaryAccent)
+                                .foregroundColor(Color.gray)
                                 .padding(.top)
                                 .padding(.leading)
 
@@ -87,21 +109,31 @@ struct LoginView: View {
                                         .foregroundColor(.green)
                                 }
                             }
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.dark))
                             .padding(.horizontal)
+                            //.padding(.top, -10)
+                            .padding(.bottom, 1)
+                            
+                            Divider()
+                                .background(Color.white) // Make it more visible
+                                .frame(height: 1) // Adjust thickness
+                                .padding(.horizontal)
                         }
+                        .background(Color.clear)
+                        .padding()
+                        .padding(.horizontal)
 
                         Button(action: {
                             // Forgot Password Action
                         }) {
                             Text("Forgot Password?")
                                 .font(.footnote)
-                                .foregroundColor(Color.primaryAccent)
-                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                .fontWeight(.light)
+                                .foregroundColor(Color.gray)
+                                .frame(maxWidth: .infinity, alignment: .center)
                         }
                         .padding(.horizontal, 30)
-
+                        .padding(.top, -10)
+                        
                         Spacer().frame(height: 40)
 
                         Button {
@@ -121,17 +153,40 @@ struct LoginView: View {
                             }
                         } label: {
                             Text("Sign In")
-                                .foregroundColor(Color.white)
+                                .foregroundColor(Color.black).opacity(0.6)
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                                 .padding(17)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(Color.secondaryAccent))
-                                .padding(.horizontal, 25)
+                                    LinearGradient(gradient: Gradient(colors: [Color.tealColor, Color.greenColor]),
+                                                   startPoint: .leading, endPoint: .trailing)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 20))
+                                .padding(.horizontal, 100)
                         }
                     }
+                    
+                    Spacer().frame(height: 100)
+                    
+                    Text("Don't have an account?")
+                        .font(.caption)
+                        .fontWeight(.light)
+                        .foregroundColor(Color.gray)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    
+                    Button(action: {
+                        
+                    }) {
+                        Text("Create an Account.")
+                            .font(.footnote)
+                            .fontWeight(.medium)
+                            .foregroundColor(Color.white)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    
+
+                    Spacer()
                 }
             }
         }
