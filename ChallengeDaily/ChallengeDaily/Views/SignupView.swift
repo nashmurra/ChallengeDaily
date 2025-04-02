@@ -230,52 +230,63 @@ struct SignupView: View {
                     Spacer().frame(height: 40)
                     
                     Button {
-                        
                         Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
                             if let error = error {
                                 print("Error creating user: \(error.localizedDescription)")
                                 return
                             }
-                            
+
                             guard let authResult = authResult else { return }
-                            
+
                             let newUserID = authResult.user.uid
                             userID = newUserID  // Save userID in AppStorage
                             accountCreated = true
-                            
+
                             let db = Firestore.firestore()
-                            db.collection("users").document(newUserID).setData([
-                                "userID": newUserID,
-                                "username": username,
-                                "email": email,
-                                "createdAt": Timestamp(),
-                                "darkMode": true,
-                                "privateAccount": false,
-                                "findFriendsWithContacts": false,
-                                "contentFilter": "Everyone",
-                                "profileImage": "",
-                                "currentChallengeID": currentChallengeViewmodel.currentChallenge?.challengeID,
-                                "notifications": [
-                                    "Friend Requests": true,
-                                    "New Followers": true,
-                                    "Friends' Posts": false,
-                                    "Tags": true,
-                                    "Comments": true,
-                                    "Likes": false,
-                                    "Streak Warnings": true,
-                                    "Achievements": true
-                                ]
-                            ], merge: true) { error in
+
+                            // Fetch random challenges and store them in Firestore
+                            db.collection("challenges").getDocuments { snapshot, error in
                                 if let error = error {
-                                    print("Error creating user document: \(error.localizedDescription)")
-                                } else {
-                                    print("User document created successfully!")
+                                    print("Error fetching challenges: \(error.localizedDescription)")
+                                    return
+                                }
+
+                                let allChallenges = snapshot?.documents.map { $0.documentID } ?? []
+                                let randomChallenges = allChallenges.shuffled().prefix(4)
+
+                                // Create the user document with assigned challenges
+                                db.collection("users").document(newUserID).setData([
+                                    "userID": newUserID,
+                                    "username": username,
+                                    "email": email,
+                                    "createdAt": Timestamp(),
+                                    "darkMode": true,
+                                    "privateAccount": false,
+                                    "findFriendsWithContacts": false,
+                                    "contentFilter": "Everyone",
+                                    "profileImage": "",
+                                    "currentChallengeID": randomChallenges.first ?? "",  // First challenge
+                                    "challenges": Array(randomChallenges),  // Store all 4 challenge IDs
+                                    "lastUpdated": getFormattedDate(),  // Today's date
+                                    "notifications": [
+                                        "Friend Requests": true,
+                                        "New Followers": true,
+                                        "Friends' Posts": false,
+                                        "Tags": true,
+                                        "Comments": true,
+                                        "Likes": false,
+                                        "Streak Warnings": true,
+                                        "Achievements": true
+                                    ]
+                                ], merge: true) { error in
+                                    if let error = error {
+                                        print("Error creating user document: \(error.localizedDescription)")
+                                    } else {
+                                        print("User document created successfully!")
+                                    }
                                 }
                             }
-                            
-                            
                         }
-                        
                     } label: {
                         Text("Sign Up")
                             .foregroundColor(Color.white)
@@ -288,6 +299,7 @@ struct SignupView: View {
                                     .fill(Color.secondaryAccent))
                             .padding(.horizontal, 25)
                     }
+
                     
                     
                     NavigationLink(destination: MainView(), isActive: $accountCreated) {
@@ -304,4 +316,6 @@ struct SignupView: View {
         }
     }
     }
+    
+    
 }
