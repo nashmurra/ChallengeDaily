@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChallengeDashboardView: View {
     @AppStorage("uid") var userID: String = ""
+    @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
 
     var body: some View {
         ZStack {
@@ -17,22 +18,22 @@ struct ChallengeDashboardView: View {
                     
                     VStack(spacing: 20) {
                         HStack {
-                            ExtractedView(backgroundColor: Color.purpleColor)
+                            ChallengeItem(backgroundColor: Color.purpleColor)
                                 .padding(.leading, 40)
                             
                             Spacer()
                             
-                            ExtractedView(backgroundColor: Color.pinkColor)
+                            ChallengeItem(backgroundColor: Color.pinkColor)
                                 .padding(.trailing, 40)
                         }
                         
                         HStack {
-                            ExtractedView(backgroundColor: Color.yellowColor)
+                            ChallengeItem(backgroundColor: Color.yellowColor)
                                 .padding(.leading, 40)
                             
                             Spacer()
                             
-                            ExtractedView(backgroundColor: Color.blueColor)
+                            ChallengeItem(backgroundColor: Color.blueColor)
                                 .padding(.trailing, 40)
                         }
                         
@@ -43,11 +44,15 @@ struct ChallengeDashboardView: View {
                 }
             }
         }
+        .onAppear {
+            currentChallengeViewmodel.fetchDailyChallenges(for: Date())
+        }
     }
 }
 
-struct ExtractedView: View {
+struct ChallengeItem: View {
     var backgroundColor: Color  // New parameter for background color
+    var challenge: Challenge
 
     var body: some View {
         VStack {
@@ -65,12 +70,12 @@ struct ExtractedView: View {
                 .frame(width: 60, height: 60)
                 .foregroundColor(Color.white)
 
-            Text("Unspoken Standoff")
+            Text(challenge.title)
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(Color.white)
 
-            Text("25% of users")
+            Text(challenge.creator)
                 .font(.subheadline)
                 .fontWeight(.regular)
                 .foregroundColor(Color.white)
