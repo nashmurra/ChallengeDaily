@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ChallengeDashboardView: View {
     @AppStorage("uid") var userID: String = ""
-    @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
 
     var body: some View {
         ZStack {
@@ -18,22 +17,22 @@ struct ChallengeDashboardView: View {
                     
                     VStack(spacing: 20) {
                         HStack {
-                            ChallengeItem(backgroundColor: Color.purpleColor)
+                            ExtractedView(backgroundColor: Color.purpleColor)
                                 .padding(.leading, 40)
                             
                             Spacer()
                             
-                            ChallengeItem(backgroundColor: Color.pinkColor)
+                            ExtractedView(backgroundColor: Color.pinkColor)
                                 .padding(.trailing, 40)
                         }
                         
                         HStack {
-                            ChallengeItem(backgroundColor: Color.yellowColor)
+                            ExtractedView(backgroundColor: Color.yellowColor)
                                 .padding(.leading, 40)
                             
                             Spacer()
                             
-                            ChallengeItem(backgroundColor: Color.blueColor)
+                            ExtractedView(backgroundColor: Color.blueColor)
                                 .padding(.trailing, 40)
                         }
                         
@@ -44,15 +43,11 @@ struct ChallengeDashboardView: View {
                 }
             }
         }
-        .onAppear {
-            currentChallengeViewmodel.fetchDailyChallenges(for: Date())
-        }
     }
 }
 
-struct ChallengeItem: View {
+struct ExtractedView: View {
     var backgroundColor: Color  // New parameter for background color
-    var challenge: Challenge
 
     var body: some View {
         VStack {
@@ -70,12 +65,12 @@ struct ChallengeItem: View {
                 .frame(width: 60, height: 60)
                 .foregroundColor(Color.white)
 
-            Text(challenge.title)
+            Text("Unspoken Standoff")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(Color.white)
 
-            Text(challenge.creator)
+            Text("25% of users")
                 .font(.subheadline)
                 .fontWeight(.regular)
                 .foregroundColor(Color.white)

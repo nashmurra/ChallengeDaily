@@ -4,18 +4,12 @@ import Combine
 
 class ChallengeViewModel: ObservableObject {
     @Published var dailyChallenges: [Challenge] = []
-        @Published var currentChallenge: Challenge? // This stores the active challenge
-        //@Published var challengesOfTheDay: [Challenge] = []
+    @Published var currentChallenge: Challenge? // This stores the active challenge
 
-    func fetchDailyChallenges(for date: Date) {
+    func fetchDailyChallenges() {
         let db = Firestore.firestore()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dateString = dateFormatter.string(from: date)
-        
         db.collection("challenges")
             .whereField("challengeType", isEqualTo: "daily")
-            .whereField("dates", arrayContains: dateString) // Check if the date exists in the array
             .getDocuments { snapshot, error in
                 if let error = error {
                     print("Error fetching challenges: \(error.localizedDescription)")
@@ -26,7 +20,7 @@ class ChallengeViewModel: ObservableObject {
                     self.dailyChallenges = snapshot?.documents.compactMap { doc in
                         let data = doc.data()
                         return Challenge(
-                            id: "",
+                            id:"",
                             challengeID: doc.documentID,
                             challengeType: data["challengeType"] as? String ?? "No challenge type",
                             creator: data["creator"] as? String ?? "No creator",
@@ -38,11 +32,9 @@ class ChallengeViewModel: ObservableObject {
 
                     // Pick a random challenge if available
                     self.currentChallenge = self.dailyChallenges.randomElement()
-                    
                 }
             }
     }
-
     
     func fetchCurrentChallenge(challengeID: String, completion: @escaping (Challenge?) -> Void) {
         let db = Firestore.firestore()
