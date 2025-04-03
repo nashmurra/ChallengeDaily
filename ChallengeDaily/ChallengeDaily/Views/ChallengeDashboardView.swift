@@ -2,52 +2,76 @@ import SwiftUI
 
 struct ChallengeDashboardView: View {
     @AppStorage("uid") var userID: String = ""
+    @StateObject private var challengeViewModel = ChallengeViewModel()
 
     var body: some View {
-        ZStack {
-            Image("appBackground")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                Image("appBackground")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
 
-            ScrollView {
-                VStack {
-                    
-                    Spacer().frame(height: 80)
-                    
-                    VStack(spacing: 20) {
-                        HStack {
-                            ExtractedView(backgroundColor: Color.purpleColor)
-                                .padding(.leading, 40)
+                ScrollView {
+                    VStack {
+                        Spacer().frame(height: 80)
+
+                        VStack(spacing: 20) {
+                            let challenges = challengeViewModel.dailyChallenges
                             
-                            Spacer()
-                            
-                            ExtractedView(backgroundColor: Color.pinkColor)
-                                .padding(.trailing, 40)
+                            if challenges.count >= 1 {
+                                HStack {
+                                    if challenges.indices.contains(0) {
+                                        NavigationLink(destination: DetailView(backgroundColor: Color.purpleColor, currentChallenge: challenges[0])) {
+                                            ChallengeItem(backgroundColor: Color.purpleColor, currentChallenge: challenges[0])
+                                        }
+                                        .padding(.leading, 40)
+                                    }
+
+                                    Spacer()
+
+                                    if challenges.indices.contains(1) {
+                                        NavigationLink(destination: DetailView(backgroundColor: Color.pinkColor, currentChallenge: challenges[1])) {
+                                            ChallengeItem(backgroundColor: Color.pinkColor, currentChallenge: challenges[1])
+                                        }
+                                        .padding(.trailing, 40)
+                                    }
+                                }
+
+                                HStack {
+                                    if challenges.indices.contains(2) {
+                                        NavigationLink(destination: DetailView(backgroundColor: Color.yellowColor, currentChallenge: challenges[2])) {
+                                            ChallengeItem(backgroundColor: Color.yellowColor, currentChallenge: challenges[2])
+                                        }
+                                        .padding(.leading, 40)
+                                    }
+
+                                    Spacer()
+
+                                    if challenges.indices.contains(3) {
+                                        NavigationLink(destination: DetailView(backgroundColor: Color.blueColor, currentChallenge: challenges[3])) {
+                                            ChallengeItem(backgroundColor: Color.blueColor, currentChallenge: challenges[3])
+                                        }
+                                        .padding(.trailing, 40)
+                                    }
+                                }
+                            }
                         }
-                        
-                        HStack {
-                            ExtractedView(backgroundColor: Color.yellowColor)
-                                .padding(.leading, 40)
-                            
-                            Spacer()
-                            
-                            ExtractedView(backgroundColor: Color.blueColor)
-                                .padding(.trailing, 40)
-                        }
-                        
-                        
+
+                        Spacer()
                     }
-                    
-                    Spacer()
                 }
+            }
+            .onAppear {
+                challengeViewModel.fetchUserChallenges()
             }
         }
     }
 }
 
-struct ExtractedView: View {
+struct ChallengeItem: View {
     var backgroundColor: Color  // New parameter for background color
+    var currentChallenge: Challenge
 
     var body: some View {
         VStack {
@@ -65,12 +89,12 @@ struct ExtractedView: View {
                 .frame(width: 60, height: 60)
                 .foregroundColor(Color.white)
 
-            Text("Unspoken Standoff")
+            Text(currentChallenge.title)
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(Color.white)
 
-            Text("25% of users")
+            Text(currentChallenge.creator)
                 .font(.subheadline)
                 .fontWeight(.regular)
                 .foregroundColor(Color.white)

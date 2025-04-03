@@ -5,11 +5,10 @@
 //  Created by Jonathan on 2/4/25.
 //
 
-import SwiftUI
-import FirebaseAuth
 import Firebase
-import FirebaseFirestore
 import FirebaseAuth
+import FirebaseFirestore
+import SwiftUI
 
 struct InfoView: View {
     //@Binding var currentViewShowing: String
@@ -19,58 +18,68 @@ struct InfoView: View {
     @Binding var password: String
     //@State private var username: String = ""
     @AppStorage("uid") var userID: String = ""
-    
+
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
-    
-    
+
     @Binding var currentViewShowing: String
-    
+
     private func isValidPassword(_ password: String) -> Bool {
         //minimum 6 characters long
         //1 uppercase character
         //1 special character
-        
-        let passwordRegex = NSPredicate(format: "SELF MATCHES %@", "^(?=.*[a-z])(?=.*[$@$#!%*?&])(?=.*[A-Z]).{6,}$")
-        
+
+        let passwordRegex = NSPredicate(
+            format: "SELF MATCHES %@",
+            "^(?=.*[a-z])(?=.*[$@$#!%*?&])(?=.*[A-Z]).{6,}$")
+
         return passwordRegex.evaluate(with: password)
-        
+
     }
-    
+
     var body: some View {
         ZStack {
-            Color(red: 20/255, green: 28/255, blue: 30/255).edgesIgnoringSafeArea(.all)
-                
-                // Background icon pattern
+            Color(red: 20 / 255, green: 28 / 255, blue: 30 / 255)
+                .edgesIgnoringSafeArea(.all)
+
+            // Background icon pattern
             GeometryReader { geometry in
-                    let icons = ["star.fill", "heart.fill", "bolt.fill", "flame.fill", "cloud.fill", "moon.fill", "sun.max.fill",
-                                 "checkmark.circle.fill", "exclamationmark.triangle.fill"]
-                    let spacing: CGFloat = 80 // Base spacing between icons
-                    let jitter: CGFloat = 10 // How much each icon can shift
-                    
-                    ForEach(0..<Int(geometry.size.width / spacing) * Int(geometry.size.height / spacing), id: \.self) { index in
-                        let row = index / Int(geometry.size.width / spacing)
-                        let column = index % Int(geometry.size.width / spacing)
-                        
-                        let randomXOffset = 50 + CGFloat.random(in: -jitter...jitter)
-                        let randomYOffset = 200 + CGFloat.random(in: -jitter...jitter)
-                        
-                        Image(systemName: icons.randomElement()!)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 25, height: 25)
-                            .foregroundColor(.white.opacity(0.2)) // Faded effect
-                            .position(
-                                x: CGFloat(column) * spacing + randomXOffset,
-                                y: CGFloat(row) * spacing + randomYOffset
-                            )
-                    }
+                let icons = [
+                    "star.fill", "heart.fill", "bolt.fill", "flame.fill",
+                    "cloud.fill", "moon.fill", "sun.max.fill",
+                    "checkmark.circle.fill", "exclamationmark.triangle.fill",
+                ]
+                let spacing: CGFloat = 80  // Base spacing between icons
+                let jitter: CGFloat = 10  // How much each icon can shift
+
+                ForEach(
+                    0..<Int(geometry.size.width / spacing)
+                        * Int(geometry.size.height / spacing), id: \.self
+                ) { index in
+                    let row = index / Int(geometry.size.width / spacing)
+                    let column = index % Int(geometry.size.width / spacing)
+
+                    let randomXOffset =
+                        50 + CGFloat.random(in: -jitter...jitter)
+                    let randomYOffset =
+                        200 + CGFloat.random(in: -jitter...jitter)
+
+                    Image(systemName: icons.randomElement()!)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 25, height: 25)
+                        .foregroundColor(.white.opacity(0.2))  // Faded effect
+                        .position(
+                            x: CGFloat(column) * spacing + randomXOffset,
+                            y: CGFloat(row) * spacing + randomYOffset
+                        )
                 }
-            
-            VStack{
-                
+            }
+
+            VStack {
+
                 /*
                 Spacer().frame(height: 50)
-                
+
                 Image(systemName: "plus.app.fill")
                     .resizable()
                     .scaledToFit()
@@ -79,56 +88,54 @@ struct InfoView: View {
                     //.backgroundColor(Color.backgroundDark)
                     .frame(width: 100, height: 100)
                  */
-                
-                
+
                 //Spacer()
-                
+
                 //Spacer().frame(height: 70)
-                
-                VStack{
-                    
+
+                VStack {
+
                     Spacer().frame(height: 150)
-                    
+
                     Text("More Info")
-                        .font(.system(size: 50, weight: .heavy, design: .default))
+                        .font(
+                            .system(size: 50, weight: .heavy, design: .default)
+                        )
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.leading, 90)
                         .foregroundColor(Color.whiteText)
-                    
+
                     Spacer().frame(height: 10)
-                    
+
                     Text("Create Account")
                         .font(.caption2)
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.leading, 90)
                         .foregroundColor(.white.opacity((0.7)))
-                    
-                   
-                    
-                    VStack{
-                        
+
+                    VStack {
+
                         Spacer().frame(height: 10)
-                        
+
                         Text("USERNAME")
                             .font(.caption)
                             .fontWeight(.medium)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.leading, 150)
                             .foregroundColor(.white.opacity((0.7)))
-                        
-                        HStack{
+
+                        HStack {
                             //Image(systemName: "mail")
                             TextField("Username", text: $username)
                                 .foregroundColor(Color.whiteText)
                                 .disableAutocorrection(true)
                                 .autocapitalization(.none)
-                               
-                            
+
                             Spacer()
-                            
-                            if (username.count != 2) {
+
+                            if username.count != 2 {
                                 Image(systemName: "checkmark")
                                     .fontWeight(.bold)
                                     .foregroundColor(.green)
@@ -137,50 +144,7 @@ struct InfoView: View {
                                     .fontWeight(.bold)
                                     .foregroundColor(.red)
                             }
-                            
-                        }
-                        .padding()
-                        .background {
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(lineWidth: 2)
-                                .fill(.white.opacity((0.7)))
-                                //.foregroundColor(Color.backgroundDark)
-                        }
-                        .padding()
-                        .padding(.top, -15)
-                        .padding(.leading, 130)
-                        .padding(.trailing, 40)
-                    }
-                    
-                    VStack {
-                        
-                        Spacer().frame(height: 10)
-                        
-                        Text("PHONE NUMBER")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 150)
-                            .foregroundColor(.white.opacity((0.7)))
-                        
-                        HStack{
-                            //Image(systemName: "lock")
-                            SecureField("Phone Number", text: $phonenumber)
-                                .disableAutocorrection(true)
-                                .autocapitalization(.none)
-                            
-                            Spacer()
-                            
-                            if (phonenumber.count != 10) {
-                                Image(systemName: "checkmark")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.green)
-                            } else {
-                                Image(systemName: "xmark")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.red)
-                            }
-                            
+
                         }
                         .padding()
                         .background {
@@ -194,35 +158,77 @@ struct InfoView: View {
                         .padding(.leading, 130)
                         .padding(.trailing, 40)
                     }
-                    
+
+                    VStack {
+
+                        Spacer().frame(height: 10)
+
+                        Text("PHONE NUMBER")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.leading, 150)
+                            .foregroundColor(.white.opacity((0.7)))
+
+                        HStack {
+                            //Image(systemName: "lock")
+                            SecureField("Phone Number", text: $phonenumber)
+                                .disableAutocorrection(true)
+                                .autocapitalization(.none)
+
+                            Spacer()
+
+                            if phonenumber.count != 10 {
+                                Image(systemName: "checkmark")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.green)
+                            } else {
+                                Image(systemName: "xmark")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.red)
+                            }
+
+                        }
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(lineWidth: 2)
+                                .fill(.white.opacity((0.7)))
+                            //.foregroundColor(Color.backgroundDark)
+                        }
+                        .padding()
+                        .padding(.top, -15)
+                        .padding(.leading, 130)
+                        .padding(.trailing, 40)
+                    }
+
                     Button {
-                        
-                        
+
                     } label: {
                         Text("Create Account")
                             .foregroundColor(Color.whiteText)
                             .font(.title3)
                             .bold()
-                        
+
                             .frame(maxWidth: .infinity)
                             .padding()
-                        
-                            .background{
+
+                            .background {
                                 RoundedRectangle(cornerRadius: 10)
                                     .fill(Color.backgroundDark)
                             }
                             .padding(.horizontal)
-                        
+
                     }
                     .padding(.leading, 140)
                     .padding(.trailing, 50)
-                    
+
                     Button(action: {
-                        
+
                         withAnimation {
                             self.currentViewShowing = "signup"
                         }
-                        
+
                     }) {
                         Text("Nevermind")
                             .font(.footnote)
@@ -230,27 +236,25 @@ struct InfoView: View {
                     }
                     .padding(.leading, 90)
                     .padding(.top, 60)
-                    
+
                     //Spacer()
                     //Spacer()
-                    
-                   
-                    
+
                     Spacer()
                 }
                 .background(
                     RoundedRectangle(cornerRadius: 90, style: .continuous)
                         .fill(Color.backgroundLight)
-                        //.matchedGeometryEffect(id: "background", in: namespace)
-                    
+                    //.matchedGeometryEffect(id: "background", in: namespace)
+
                 )
                 .padding(.leading, -90)
                 .padding(.top, -50)
                 .ignoresSafeArea()
                 //.offset(x: -99)
-                
+
                 Spacer().frame(height: 70)
-                
+
                 Image(systemName: "plus.app.fill")
                     .resizable()
                     .scaledToFit()
@@ -258,25 +262,20 @@ struct InfoView: View {
                     .foregroundColor(Color.pinkColor)
                     //.backgroundColor(Color.backgroundDark)
                     .frame(width: 100, height: 100)
-                 
-                
-                
+
                 //Spacer()
-                
+
                 Spacer().frame(height: 50)
             }
-            
-            
-            
+
         }
-        .onAppear {
-            currentChallengeViewmodel.fetchDailyChallenges()
-            print("fetched the challenges")
-        }
-        
-        
-        
+
     }
     
-    
+    private func getFormattedDate() -> String {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter.string(from: Date())
+        }
+
 }

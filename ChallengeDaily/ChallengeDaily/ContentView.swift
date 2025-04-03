@@ -42,7 +42,7 @@ struct ContentView: View {
                                 Label("Home", systemImage: "house.fill")
                             }
 
-                        DetailView()
+                        SettingsView()
                            // .preferredColorScheme(.dark)
                             .tabItem {
                                 Label("Explore", systemImage: "target")

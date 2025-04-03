@@ -57,43 +57,6 @@ class UserViewModel: ObservableObject {
 
     
     
-    func randomizeUserDailyChallenges() {
-        let db = Firestore.firestore()
-        
-        // Fetch daily challenges
-        currentChallengeViewmodel.fetchDailyChallenges()
-        
-        // Wait for dailyChallenges to be populated
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            guard let self = self, !self.currentChallengeViewmodel.dailyChallenges.isEmpty else {
-                print("No challenges available to assign.")
-                return
-            }
-            
-            db.collection("users").getDocuments { snapshot, error in
-                if let error = error {
-                    print("Error fetching users: \(error.localizedDescription)")
-                    return
-                }
-                
-                guard let documents = snapshot?.documents else { return }
-                
-                for document in documents {
-                    let userID = document.documentID
-                    
-                    // Pick a random challenge
-                    if let randomChallenge = self.currentChallengeViewmodel.dailyChallenges.randomElement() {
-                        db.collection("users").document(userID).updateData(["currentChallengeID": randomChallenge.challengeID]) { error in
-                            if let error = error {
-                                print("Error updating challenge for user \(userID): \(error.localizedDescription)")
-                            } else {
-                                print("Successfully assigned challenge \(randomChallenge.challengeID) to user \(userID)")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    
 
 }

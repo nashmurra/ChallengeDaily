@@ -6,6 +6,11 @@ struct DetailView: View {
     // Example percentages
     let acceptedPercentage: Double = 25
     let completedPercentage: Double = 10
+    
+    var backgroundColor: Color  // New parameter for background color
+    var currentChallenge: Challenge
+    
+    @Environment(\.presentationMode) var presentationMode  // To control navigation back
 
     var body: some View {
         ZStack {
@@ -19,7 +24,7 @@ struct DetailView: View {
 
                 ZStack {
                     Circle()
-                        .stroke(Color.purpleColor, lineWidth: 9)
+                        .stroke(backgroundColor, lineWidth: 9)
                         .frame(width: 140, height: 140)
 
                     Image(systemName: "timer")
@@ -30,15 +35,14 @@ struct DetailView: View {
 
                 Spacer().frame(height: 40)
 
-                Text("Unspoken Standoff")
+                Text(currentChallenge.title)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(Color.white)
                 
                 Spacer().frame(height: 10)
-                    //.padding(.bottom)
 
-                Text("Start a stopwatch and stare at someone intently without saying a single thing")
+                Text(currentChallenge.instructions)
                     .font(.subheadline)
                     .fontWeight(.regular)
                     .foregroundColor(Color.white)
@@ -47,16 +51,12 @@ struct DetailView: View {
                     .padding(.horizontal, 55)
                 
                 Spacer().frame(height: 10)
-                    
-                    //.padding()
                 
-                Text("Take a picture of the stopwatch with the person as proof")
+                Text(currentChallenge.hint)
                     .font(.caption)
                     .fontWeight(.regular)
                     .foregroundColor(Color.white)
                     .multilineTextAlignment(.center)
-                    //.padding(.top)
-                    
                 
                 Spacer().frame(height: 60)
                 
@@ -64,23 +64,18 @@ struct DetailView: View {
                     // Placeholder for accept challenge action
                 } label: {
                     Text("Accept Challenge")
-                        .foregroundColor(Color.white) // Match the stroke color
+                        .foregroundColor(Color.white)
                         .font(.subheadline)
                         .fontWeight(.bold)
                         .frame(maxWidth: .infinity)
                         .padding(17)
-//                        .overlay(
-//                            RoundedRectangle(cornerRadius: 20)
-//                                .stroke(Color.purpleColor, lineWidth: 3) // Outline stroke
-//                        )
                         .background(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.purpleColor) // Outline stroke
+                                .fill(backgroundColor)
                         )
                         .padding(.horizontal, 100)
                 }
 
-                
                 Text("Warning: Once you accept, you can't cancel")
                     .font(.caption2)
                     .fontWeight(.regular)
@@ -103,16 +98,31 @@ struct DetailView: View {
 
                 // HStack for circular gauges
                 HStack(spacing: 50) {
-                    CircularGauge(value: acceptedPercentage, label: "Accepted", color: Color.purpleColor)
-                    CircularGauge(value: completedPercentage, label: "Completed", color: Color.purpleColor)
+                    CircularGauge(value: acceptedPercentage, label: "Accepted", color: backgroundColor)
+                    CircularGauge(value: completedPercentage, label: "Completed", color: backgroundColor)
                 }
                 .padding(.bottom, 40)
 
                 Spacer()
             }
         }
+        .navigationTitle("Challenge")  // Set the navigation title
+        .navigationBarTitleDisplayMode(.inline)  // Display title inline
+        .navigationBarBackButtonHidden(true)  // Hide default back button
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "arrow.left")
+                        .foregroundColor(.white)
+                        .imageScale(.large)
+                }
+            }
+        }
     }
 }
+
 
 // Circular gauge view
 struct CircularGauge: View {
