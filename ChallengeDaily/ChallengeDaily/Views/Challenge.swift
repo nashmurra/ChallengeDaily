@@ -15,4 +15,5 @@ struct Challenge: Identifiable {
         var title: String
         var instructions: String
         var hint: String
+        var icon: String
 }

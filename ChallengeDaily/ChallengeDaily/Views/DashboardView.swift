@@ -108,7 +108,3 @@ struct DashboardView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .preferredColorScheme(.light)
-}

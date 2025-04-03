@@ -7,6 +7,10 @@ struct PostView: View {
     var image: UIImage?
     @State private var navigateToMain = false  // State to trigger navigation
     //@Binding var currentViewShowing: String
+    
+    @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
+    //@StateObject private var postViewModel = PostViewModel()
+    @StateObject private var userViewModel = UserViewModel()
 
     var body: some View {
         VStack(spacing: 16) {
@@ -29,6 +33,33 @@ struct PostView: View {
 
             Button(action: {
                 if let image = image, let base64String = encodeImageToBase64(image: image) {
+                    
+                    
+                    guard let userID = Auth.auth().currentUser?.uid else {
+                        return
+                    }
+                    
+                    var challengeNameFromDatabase = "challengeName"
+                    userViewModel.fetchUserChallengeID { challengeID in
+                        if let challengeID = challengeID {
+                            print("User's current challenge ID: \(challengeID)")
+                            
+                            currentChallengeViewmodel.fetchChallengeByID(challengeID) { challenge in
+                                if let challenge = challenge {
+                                    DispatchQueue.main.async {
+                                        challengeNameFromDatabase = challenge.title
+                                    }
+                                    print("Fetched challenge: \(challenge.title)")
+                                } else {
+                                    challengeNameFromDatabase = "No Challenge name found"
+                                    print("Challenge not found")
+                                }
+                            }
+                        } else {
+                            print("User has no current challenge ID assigned.")
+                        }
+                    }
+                    
                     let db = Firestore.firestore()
                     db.collection("feed").document(UUID().uuidString).setData([
                         "caption": "caption here",
@@ -36,7 +67,8 @@ struct PostView: View {
                         "image": base64String,
                         "createdAt": Timestamp(),
                         "likes": 4,  // Default settings
-                        "userID": "userID"
+                        "userID": userID,
+                        "challengeName": challengeNameFromDatabase
                     ], merge: true) { error in
                         if let error = error {
                             print("Error creating feed document: \(error.localizedDescription)")

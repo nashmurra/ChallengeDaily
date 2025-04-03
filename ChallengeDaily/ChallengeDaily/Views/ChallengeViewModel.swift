@@ -82,7 +82,9 @@ class ChallengeViewModel: ObservableObject {
                     creator: data["creator"] as? String ?? "No creator",
                     title: data["title"] as? String ?? "No title",
                     instructions: data["instructions"] as? String ?? "No instructions",
-                    hint: data["hint"] as? String ?? "No hint"
+                    hint: data["hint"] as? String ?? "No hint",
+                    icon: data["image"] as? String ?? "No image"
+                    
                 )
 
                 fetchedChallenges.append(challenge)
@@ -94,6 +96,38 @@ class ChallengeViewModel: ObservableObject {
             self.currentChallenge = fetchedChallenges.randomElement()
         }
     }
+    
+    func fetchChallengeByID(_ challengeID: String, completion: @escaping (Challenge?) -> Void) {
+        let challengeRef = db.collection("challenges").document(challengeID)
+        
+        challengeRef.getDocument { snapshot, error in
+            if let error = error {
+                print("Error fetching challenge: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+            
+            guard let data = snapshot?.data() else {
+                print("Challenge not found.")
+                completion(nil)
+                return
+            }
+            
+            let challenge = Challenge(
+                id: snapshot?.documentID ?? "",
+                challengeID: snapshot?.documentID ?? "",
+                challengeType: data["challengeType"] as? String ?? "No challenge type",
+                creator: data["creator"] as? String ?? "No creator",
+                title: data["title"] as? String ?? "No title",
+                instructions: data["instructions"] as? String ?? "No instructions",
+                hint: data["hint"] as? String ?? "No hint",
+                icon: data["image"] as? String ?? "No image"
+            )
+            
+            completion(challenge)
+        }
+    }
+
 
     private func getFormattedDate() -> String {
         let formatter = DateFormatter()

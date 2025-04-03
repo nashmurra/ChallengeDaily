@@ -4,6 +4,7 @@ import Combine
 
 class PostViewModel: ObservableObject {
     @Published var viewModelPosts: [Post] = []
+    var userViewModel = UserViewModel()
 
     func fetchPosts() {
         let db = Firestore.firestore()
@@ -19,8 +20,12 @@ class PostViewModel: ObservableObject {
                     self.viewModelPosts = snapshot?.documents.compactMap { doc in
                         let data = doc.data()
                         let timestamp = data["createdAt"] as? Timestamp ?? Timestamp()
+                        
+                        self.userViewModel.fetchCurrentUser()
+                        
                         return Post(
-                            username: data["userID"] as? String ?? "No userID",
+                            username: self.userViewModel.username as? String ?? "No userID",
+                            challengeName: data["challengeName"] as? String ?? "no challengeName",
                             image: data["image"] as? String ?? "no image",
                             createdAt: timestamp.dateValue()
                         )

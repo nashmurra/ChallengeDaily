@@ -10,6 +10,8 @@ struct DetailView: View {
     var backgroundColor: Color  // New parameter for background color
     var currentChallenge: Challenge
     
+    @StateObject private var userViewModel = UserViewModel()
+    
     @Environment(\.presentationMode) var presentationMode  // To control navigation back
 
     var body: some View {
@@ -27,7 +29,7 @@ struct DetailView: View {
                         .stroke(backgroundColor, lineWidth: 9)
                         .frame(width: 140, height: 140)
 
-                    Image(systemName: "timer")
+                    Image(systemName: currentChallenge.icon)
                         .resizable()
                         .frame(width: 60, height: 60)
                         .foregroundColor(Color.white)
@@ -61,7 +63,9 @@ struct DetailView: View {
                 Spacer().frame(height: 60)
                 
                 Button {
-                    // Placeholder for accept challenge action
+                    
+                    userViewModel.setCurrentChallenge(challenge: currentChallenge)
+                    
                 } label: {
                     Text("Accept Challenge")
                         .foregroundColor(Color.white)
@@ -155,7 +159,3 @@ struct CircularGauge: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .preferredColorScheme(.dark)
-}

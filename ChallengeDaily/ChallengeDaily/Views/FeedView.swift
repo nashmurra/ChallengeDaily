@@ -25,11 +25,19 @@ struct FeedView: View {
                         //.foregroundColor(Color.whiteText)
                     
                     VStack{
-                        Text(post.username)
-                            .font(.callout)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment:.leading)
-                            .foregroundColor(Color.gray)
+                        HStack {
+                            Text(post.username)
+                                .font(.callout)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity, alignment:.leading)
+                                .foregroundColor(Color.gray)
+                            
+                            Text(post.challengeName)
+                                .font(.callout)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity, alignment:.leading)
+                                .foregroundColor(Color.gray)
+                        }
 
                         Text(relativeTime(post.createdAt))
                             .font(.footnote)

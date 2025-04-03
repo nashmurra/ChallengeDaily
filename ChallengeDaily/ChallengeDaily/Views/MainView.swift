@@ -196,24 +196,26 @@ struct MainView: View {
     }
 
     func setCurrentChallenge() {
-//        userViewModel.fetchUserChallengeID { challengeID in
-//            if let challengeID = challengeID {
-//                print("User's current challenge ID: \(challengeID)")
-//                currentChallengeViewmodel.fetchCurrentChallenge(challengeID: challengeID) { challenge in
-//                    if let challenge = challenge {
-//                        DispatchQueue.main.async {
-//                            self.currentChallenge = challenge
-//                        }
-//                        print("Fetched challenge: \(challenge.title)")
-//                    } else {
-//                        print("Challenge not found")
-//                    }
-//                }
-//            } else {
-//                print("User has no current challenge ID assigned.")
-//            }
-//        }
+        userViewModel.fetchUserChallengeID { challengeID in
+            if let challengeID = challengeID {
+                print("User's current challenge ID: \(challengeID)")
+                
+                currentChallengeViewmodel.fetchChallengeByID(challengeID) { challenge in
+                    if let challenge = challenge {
+                        DispatchQueue.main.async {
+                            self.currentChallenge = challenge
+                        }
+                        print("Fetched challenge: \(challenge.title)")
+                    } else {
+                        print("Challenge not found")
+                    }
+                }
+            } else {
+                print("User has no current challenge ID assigned.")
+            }
+        }
     }
+
 
     func onCountdownReset() {
         //userViewModel.randomizeUserDailyChallenges()

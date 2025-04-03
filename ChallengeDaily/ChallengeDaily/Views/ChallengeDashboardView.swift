@@ -84,7 +84,7 @@ struct ChallengeItem: View {
                     .padding(.leading, 140)
             }
 
-            Image(systemName: "timer")
+            Image(systemName: currentChallenge.icon)
                 .resizable()
                 .frame(width: 60, height: 60)
                 .foregroundColor(Color.white)
