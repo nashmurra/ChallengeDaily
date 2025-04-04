@@ -15,21 +15,35 @@ class PostViewModel: ObservableObject {
                     print("Error fetching feed: \(error.localizedDescription)")
                     return
                 }
-
-                DispatchQueue.main.async {
-                    self.viewModelPosts = snapshot?.documents.compactMap { doc in
-                        let data = doc.data()
-                        let timestamp = data["createdAt"] as? Timestamp ?? Timestamp()
+                
+                guard let documents = snapshot?.documents else { return }
+                
+                var posts: [Post] = []
+                let dispatchGroup = DispatchGroup()
+                
+                for doc in documents {
+                    let data = doc.data()
+                    let timestamp = data["createdAt"] as? Timestamp ?? Timestamp()
+                    let userID = data["userID"] as? String ?? "No userID"
+                    
+                    dispatchGroup.enter()
+                    self.userViewModel.fetchUserByID(userID: userID) { user in
+                        let username = user?.username ?? "Unknown User"
                         
-                        self.userViewModel.fetchCurrentUser()
-                        
-                        return Post(
-                            username: self.userViewModel.username as? String ?? "No userID",
+                        let post = Post(
+                            username: username,
                             challengeName: data["challengeName"] as? String ?? "no challengeName",
                             image: data["image"] as? String ?? "no image",
                             createdAt: timestamp.dateValue()
                         )
-                    } ?? []
+                        
+                        posts.append(post)
+                        dispatchGroup.leave()
+                    }
+                }
+                
+                dispatchGroup.notify(queue: .main) {
+                    self.viewModelPosts = posts
                 }
             }
     }
