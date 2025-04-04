@@ -25,10 +25,10 @@ struct SettingsView: View {
         var body: some View {
             NavigationView {
                 ZStack {
-                    Image("BackgroundScreen")
+                    Image("appBackground")
                         .resizable()
                         .scaledToFill()
-                        .ignoresSafeArea()
+                        .ignoresSafeArea(.all)
                     
                     VStack {
                         Text("Settings")
@@ -95,7 +95,6 @@ struct SettingsView: View {
                             }
                         }
                         .listStyle(InsetGroupedListStyle())
-                        .background(Color.black.opacity(0.5)) // Adds a slight overlay for readability
                     }
                 }
             }

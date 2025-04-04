@@ -48,10 +48,11 @@ struct AchievementsView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Image("BackgroundScreen")
+                Image("appBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
+                
                 ScrollView {
                     VStack(spacing: 20) {
                         ForEach(achievements) { achievement in

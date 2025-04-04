@@ -16,10 +16,11 @@ struct PastChallengesView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Image("BackgroundScreen")
+                Image("appBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
+                
                 VStack (spacing: 0) {
                     Text("Past Challenges")
                         .font(.title.bold())

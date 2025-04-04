@@ -11,7 +11,7 @@ struct AboutView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Image("BackgroundScreen")
+                Image("appBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
