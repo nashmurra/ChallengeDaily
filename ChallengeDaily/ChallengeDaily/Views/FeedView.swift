@@ -26,17 +26,12 @@ struct FeedView: View {
                     
                     VStack{
                         HStack {
-                            Text(post.username)
+                            Text("\(post.username), \(post.challengeName)")
                                 .font(.callout)
                                 .fontWeight(.bold)
                                 .frame(maxWidth: .infinity, alignment:.leading)
                                 .foregroundColor(Color.gray)
                             
-                            Text(post.challengeName)
-                                .font(.callout)
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity, alignment:.leading)
-                                .foregroundColor(Color.gray)
                         }
 
                         Text(relativeTime(post.createdAt))
