@@ -18,7 +18,11 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
+                Image("appBackground")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                
                 VStack {
                     headerView
                     userInfoDetails

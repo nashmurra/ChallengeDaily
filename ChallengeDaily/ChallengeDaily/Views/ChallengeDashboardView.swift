@@ -86,6 +86,7 @@ struct ChallengeItem: View {
 
             Image(systemName: currentChallenge.icon)
                 .resizable()
+                .aspectRatio(contentMode: .fit)
                 .frame(width: 60, height: 60)
                 .foregroundColor(Color.white)
 

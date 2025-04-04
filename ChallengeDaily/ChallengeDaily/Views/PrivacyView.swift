@@ -16,7 +16,7 @@ struct PrivacyView: View {
 
     var body: some View {
         ZStack {
-            Image("BackgroundScreen")
+            Image("appBackground")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
