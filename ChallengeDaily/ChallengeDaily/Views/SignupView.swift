@@ -264,49 +264,44 @@ struct SignupView: View {
                                     let randomChallenges =
                                         allChallenges.shuffled().prefix(4)
 
-                                    // Create the user document with assigned challenges
-                                    db.collection("users").document(newUserID)
-                                        .setData(
-                                            [
-                                                "userID": newUserID,
-                                                "username": username,
-                                                "email": email,
-                                                "createdAt": Timestamp(),
-                                                "darkMode": true,
-                                                "privateAccount": false,
-                                                "findFriendsWithContacts":
-                                                    false,
-                                                "contentFilter": "Everyone",
-                                                "profileImage": "",
-                                                "currentChallengeID":
-                                                    randomChallenges.first
-                                                    ?? "",  // First challenge
-                                                "challenges": Array(
-                                                    randomChallenges),  // Store all 4 challenge IDs
-                                                "lastUpdated":
-                                                    getFormattedDate(),  // Today's date
-                                                "notifications": [
-                                                    "Friend Requests": true,
-                                                    "New Followers": true,
-                                                    "Friends' Posts": false,
-                                                    "Tags": true,
-                                                    "Comments": true,
-                                                    "Likes": false,
-                                                    "Streak Warnings": true,
-                                                    "Achievements": true,
-                                                ],
-                                            ], merge: true
-                                        ) { error in
-                                            if let error = error {
-                                                print(
-                                                    "Error creating user document: \(error.localizedDescription)"
-                                                )
-                                            } else {
-                                                print(
-                                                    "User document created successfully!"
-                                                )
-                                            }
+                                    db.collection("users").document(newUserID).setData(
+                                        [
+                                            "userID": newUserID,
+                                            "username": username,
+                                            "email": email,
+                                            "createdAt": Timestamp(),
+                                            "darkMode": true,
+                                            "privateAccount": false,
+                                            "findFriendsWithContacts": false,
+                                            "contentFilter": "Everyone",
+                                            "profileImage": "",
+                                            "currentChallengeID": randomChallenges.first ?? "",
+                                            "challenges": Array(randomChallenges),
+                                            "lastUpdated": getFormattedDate(),
+                                            "notifications": [
+                                                "Friend Requests": true,
+                                                "New Followers": true,
+                                                "Friends' Posts": false,
+                                                "Tags": true,
+                                                "Comments": true,
+                                                "Likes": false,
+                                                "Streak Warnings": true,
+                                                "Achievements": true,
+                                            ],
+                                            "friends": [],
+                                            "friendRequests": [],
+                                            "blockedUsers": [],
+                                            "friendCount": 0,
+                                            "pendingFriendRequestsCount": 0
+                                        ],
+                                        merge: true
+                                    ) { error in
+                                        if let error = error {
+                                            print("Error creating user document: \(error.localizedDescription)")
+                                        } else {
+                                            print("User document created successfully with friends data!")
                                         }
+                                    }
                                 }
                             }
                         } label: {
