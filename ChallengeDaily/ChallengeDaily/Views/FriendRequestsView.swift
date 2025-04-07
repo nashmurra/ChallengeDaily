@@ -1,0 +1,18 @@
+//
+//  FriendRequestsView.swift
+//  ChallengeDaily
+//
+//  Created by Nash Murra on 4/7/25.
+//
+
+import SwiftUI
+
+struct FriendRequestsView: View {
+    var body: some View {
+        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+    }
+}
+
+#Preview {
+    FriendRequestsView()
+}
