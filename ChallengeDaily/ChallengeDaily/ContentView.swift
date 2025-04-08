@@ -48,7 +48,7 @@ struct ContentView: View {
                                 Label("Friends", systemImage: "shared.with.you")
                             }
                         
-                        MainView()
+                        SettingsView()
                            // .preferredColorScheme(.dark)
                             .tabItem {
                                 Label("Explore", systemImage: "target")
