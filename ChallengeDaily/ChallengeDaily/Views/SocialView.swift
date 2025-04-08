@@ -21,6 +21,7 @@ struct SocialView: View {
     @State private var friends: [UserProfile] = []
     @State private var friendRequests: [UserProfile] = []
     @State private var recommendedFriends: [UserProfile] = []
+    @State private var outgoingRequests: [String] = []
     @AppStorage("uid") var userID: String = ""
     @StateObject var userViewModel = UserViewModel()
 
@@ -80,6 +81,7 @@ struct SocialView: View {
                 loadFriends()
                 loadRecommendedFriends()
                 loadFriendRequests()
+                loadOutgoingFriendRequests()
             }
         }
     }
@@ -212,7 +214,7 @@ struct SocialView: View {
                     .resizable()
                     .frame(width: 24, height: 24)
                     .foregroundColor(.green)
-            } else if friendRequests.contains(where: { $0.id == user.id }) {
+            } else if friendRequests.contains(where: { $0.id == user.id }) || outgoingRequests.contains(user.id) {
                 Text("Pending")
                     .foregroundColor(.yellow)
                     .font(.caption)
@@ -239,7 +241,7 @@ struct SocialView: View {
         db.collection("users").document(userID).getDocument { document, error in
             if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
                 fetchUserProfiles(userIDs: friendIDs) { users in
-                    self.friends = users
+                    self.friends = users.sorted { $0.username.lowercased() < $1.username.lowercased() }
                 }
             }
         }
@@ -259,7 +261,7 @@ struct SocialView: View {
                         profilePic: data["profilePic"] as? String ?? ""
                     )
                 }
-                self.recommendedFriends = users
+                self.recommendedFriends = users.sorted { $0.username.lowercased() < $1.username.lowercased() }
             }
         }
     }
@@ -279,22 +281,47 @@ struct SocialView: View {
             }
     }
 
+    private func loadOutgoingFriendRequests() {
+        let db = Firestore.firestore()
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, error in
+                if let documents = snapshot?.documents {
+                    let receiverIDs = documents.compactMap { $0.data()["receiverId"] as? String }
+                    self.outgoingRequests = receiverIDs
+                }
+            }
+    }
+
     private func sendFriendRequest(to user: UserProfile) {
         let db = Firestore.firestore()
-        let requestData: [String: Any] = [
-            "senderId": userID,
-            "senderName": userViewModel.username,
-            "receiverId": user.id,
-            "receiverName": user.username,
-            "status": "pending",
-            "timestamp": Timestamp(date: Date())
-        ]
 
-        db.collection("friendRequests").addDocument(data: requestData) { error in
-            if error == nil {
-                friendRequests.append(user)
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("receiverId", isEqualTo: user.id)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, error in
+                guard let snapshot = snapshot, snapshot.isEmpty else {
+                    return
+                }
+
+                let requestData: [String: Any] = [
+                    "senderId": userID,
+                    "senderName": userViewModel.username,
+                    "receiverId": user.id,
+                    "receiverName": user.username,
+                    "status": "pending",
+                    "timestamp": Timestamp(date: Date())
+                ]
+
+                db.collection("friendRequests").addDocument(data: requestData) { error in
+                    if error == nil {
+                        friendRequests.append(user)
+                        outgoingRequests.append(user.id)
+                    }
+                }
             }
-        }
     }
 
     private func fetchUserProfiles(userIDs: [String], completion: @escaping ([UserProfile]) -> Void) {
@@ -322,3 +349,4 @@ struct SocialView: View {
         }
     }
 }
+

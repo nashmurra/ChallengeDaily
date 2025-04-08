@@ -12,53 +12,78 @@ import FirebaseFirestore
 struct FriendRequestsView: View {
     @Environment(\.presentationMode) var presentationMode
     @AppStorage("uid") var userID: String = ""
-    @State private var friendRequests: [UserProfile] = []
+    @State private var receivedRequests: [UserProfile] = []
+    @State private var sentRequests: [UserProfile] = []
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Image("appBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
 
-                VStack(spacing: 20) {
-                    Text("Friend Requests")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.top, 20)
+                ScrollView {
+                    VStack(spacing: 30) {
+                        Text("Friend Requests")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.top, 20)
+                            .multilineTextAlignment(.center)
 
-                    if friendRequests.isEmpty {
-                        Spacer()
-                        Text("You have no friend requests.")
-                            .foregroundColor(.white.opacity(0.7))
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 10) {
-                                ForEach(friendRequests) { user in
-                                    requestRow(for: user)
+                        VStack(spacing: 15) {
+                            Text("Sent")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+
+                            if sentRequests.isEmpty {
+                                Text("No sent requests.")
+                                    .foregroundColor(.white.opacity(0.6))
+                            } else {
+                                ForEach(sentRequests) { user in
+                                    requestRow(for: user, isReceived: false)
                                 }
                             }
-                            .padding(.horizontal)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal)
+
+                        Divider().background(Color.white.opacity(0.3)).padding(.horizontal)
+
+                        VStack(spacing: 15) {
+                            Text("Received")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+
+                            if receivedRequests.isEmpty {
+                                Text("No received requests.")
+                                    .foregroundColor(.white.opacity(0.6))
+                            } else {
+                                ForEach(receivedRequests) { user in
+                                    requestRow(for: user, isReceived: true)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal)
                     }
+                    .padding(.bottom, 40)
+                    .frame(maxWidth: .infinity)
                 }
-                .padding(.bottom, 40)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: {
                         presentationMode.wrappedValue.dismiss()
                     }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
-                            Text("")
-                                .foregroundColor(.white)
-                        }
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.white)
+                            .imageScale(.large)
                     }
                 }
             }
@@ -68,7 +93,7 @@ struct FriendRequestsView: View {
         }
     }
 
-    private func requestRow(for user: UserProfile) -> some View {
+    private func requestRow(for user: UserProfile, isReceived: Bool) -> some View {
         HStack {
             AsyncImage(url: URL(string: user.profilePic)) { image in
                 image.resizable()
@@ -85,15 +110,28 @@ struct FriendRequestsView: View {
 
             Spacer()
 
-            Button(action: {
-                acceptFriendRequest(from: user)
-            }) {
-                Text("Accept")
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.green)
-                    .cornerRadius(8)
+            if isReceived {
+                Button(action: {
+                    acceptFriendRequest(from: user)
+                }) {
+                    Text("Accept")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.green)
+                        .cornerRadius(8)
+                }
+            } else {
+                Button(action: {
+                    cancelFriendRequest(to: user)
+                }) {
+                    Text("Cancel")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red)
+                        .cornerRadius(8)
+                }
             }
         }
         .padding()
@@ -103,45 +141,55 @@ struct FriendRequestsView: View {
 
     private func loadFriendRequests() {
         let db = Firestore.firestore()
+
         db.collection("friendRequests")
             .whereField("receiverId", isEqualTo: userID)
             .whereField("status", isEqualTo: "pending")
-            .getDocuments { snapshot, error in
-                if let documents = snapshot?.documents {
-                    let senderIDs = documents.compactMap { $0.data()["senderId"] as? String }
-                    fetchUserProfiles(userIDs: senderIDs) { users in
-                        self.friendRequests = users
-                    }
+            .getDocuments { snapshot, _ in
+                let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
+                fetchUserProfiles(userIDs: senderIDs) { users in
+                    self.receivedRequests = users
+                }
+            }
+
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, _ in
+                let receiverIDs = snapshot?.documents.compactMap { $0.data()["receiverId"] as? String } ?? []
+                fetchUserProfiles(userIDs: receiverIDs) { users in
+                    self.sentRequests = users
                 }
             }
     }
 
     private func acceptFriendRequest(from user: UserProfile) {
         let db = Firestore.firestore()
-
-        // Update friend list for both users
         let currentUserRef = db.collection("users").document(userID)
         let senderRef = db.collection("users").document(user.id)
 
-        currentUserRef.updateData([
-            "friends": FieldValue.arrayUnion([user.id])
-        ])
+        currentUserRef.updateData(["friends": FieldValue.arrayUnion([user.id])])
+        senderRef.updateData(["friends": FieldValue.arrayUnion([userID])])
 
-        senderRef.updateData([
-            "friends": FieldValue.arrayUnion([userID])
-        ])
-
-        // Update the request status to accepted
         db.collection("friendRequests")
             .whereField("senderId", isEqualTo: user.id)
             .whereField("receiverId", isEqualTo: userID)
             .whereField("status", isEqualTo: "pending")
-            .getDocuments { snapshot, error in
-                snapshot?.documents.forEach { doc in
-                    doc.reference.updateData(["status": "accepted"])
-                }
-                // Remove from UI
-                friendRequests.removeAll { $0.id == user.id }
+            .getDocuments { snapshot, _ in
+                snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
+                receivedRequests.removeAll { $0.id == user.id }
+            }
+    }
+
+    private func cancelFriendRequest(to user: UserProfile) {
+        let db = Firestore.firestore()
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("receiverId", isEqualTo: user.id)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, _ in
+                snapshot?.documents.forEach { $0.reference.delete() }
+                sentRequests.removeAll { $0.id == user.id }
             }
     }
 
@@ -152,14 +200,13 @@ struct FriendRequestsView: View {
 
         for id in userIDs {
             group.enter()
-            db.collection("users").document(id).getDocument { document, error in
+            db.collection("users").document(id).getDocument { document, _ in
                 if let document = document, let data = document.data() {
-                    let profile = UserProfile(
+                    profiles.append(UserProfile(
                         id: id,
                         username: data["username"] as? String ?? "",
                         profilePic: data["profilePic"] as? String ?? ""
-                    )
-                    profiles.append(profile)
+                    ))
                 }
                 group.leave()
             }
@@ -170,3 +217,4 @@ struct FriendRequestsView: View {
         }
     }
 }
+
