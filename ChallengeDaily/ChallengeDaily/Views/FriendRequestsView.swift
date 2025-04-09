@@ -8,6 +8,7 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import UserNotifications
 
 struct FriendRequestsView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -149,6 +150,7 @@ struct FriendRequestsView: View {
                 let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
                 fetchUserProfiles(userIDs: senderIDs) { users in
                     self.receivedRequests = users
+                    sendNotificationIfEnabled(for: users, isReceived: true)
                 }
             }
 
@@ -178,6 +180,7 @@ struct FriendRequestsView: View {
             .getDocuments { snapshot, _ in
                 snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
                 receivedRequests.removeAll { $0.id == user.id }
+                sendAcceptedRequestNotification(for: user)
             }
     }
 
@@ -216,5 +219,30 @@ struct FriendRequestsView: View {
             completion(profiles)
         }
     }
-}
 
+    private func sendNotificationIfEnabled(for users: [UserProfile], isReceived: Bool) {
+        for user in users {
+            let content = UNMutableNotificationContent()
+            content.title = isReceived ? "New Friend Request" : "Friend Request Sent"
+            content.body = "You have a new friend request from \(user.username)"
+            content.sound = .default
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+            let request = UNNotificationRequest(identifier: "\(isReceived ? "received" : "sent")_\(user.id)", content: content, trigger: trigger)
+
+            UNUserNotificationCenter.current().add(request)
+        }
+    }
+
+    private func sendAcceptedRequestNotification(for user: UserProfile) {
+        let content = UNMutableNotificationContent()
+        content.title = "Friend Request Accepted"
+        content.body = "\(user.username) accepted your friend request!"
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        let request = UNNotificationRequest(identifier: "accepted_\(user.id)", content: content, trigger: trigger)
+
+        UNUserNotificationCenter.current().add(request)
+    }
+}

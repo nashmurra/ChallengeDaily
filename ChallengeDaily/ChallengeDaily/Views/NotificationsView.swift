@@ -4,22 +4,21 @@
 //
 //  Created by Nash Murra on 3/24/25.
 //
-
 import SwiftUI
 import FirebaseFirestore
+import UserNotifications
 
 struct NotificationsView: View {
+    @AppStorage("uid") var userID: String = ""
+    @State private var masterToggle: Bool = false
     @State private var notifications: [String: Bool] = [
-        "Friend Requests": true,
-        "New Followers": true,
+        "Friend Requests": false,
         "Friends' Posts": false,
-        "Tags": true,
-        "Comments": true,
+        "Comments": false,
         "Likes": false,
-        "Streak Warnings": true,
-        "Achievements": true
+        "Streak Warnings": false,
+        "Achievements": false
     ]
-    var userID: String
     
     var body: some View {
         NavigationView {
@@ -29,49 +28,77 @@ struct NotificationsView: View {
                     .scaledToFill()
                     .ignoresSafeArea()
                 
-                VStack(alignment: .leading, spacing: 30) { // Increased spacing
-                    // Title
-                    Text("Notification Settings")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.top, 50)
-                        .padding(.horizontal)
-
-                    Spacer().frame(height: 10)
-
-                    // Toggle settings
-                    VStack(spacing: 20) { // More spacing between toggles
-                        ForEach(notifications.keys.sorted(), id: \.self) { key in
-                            Toggle(isOn: Binding(
-                                get: { self.notifications[key] ?? false },
-                                set: { newValue in
-                                    self.notifications[key] = newValue
-                                    saveNotificationsToFirestore() // Auto-save on toggle
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        Text("Notification Settings")
+                            .font(.system(size: 32, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.top, 40)
+                            .padding(.horizontal, 24)
+                        
+                        HStack {
+                            Text("Notifications")
+                                .foregroundColor(.white)
+                                .font(.system(size: 20, weight: .semibold))
+                            Spacer()
+                            Toggle("", isOn: $masterToggle.animation())
+                                .labelsHidden()
+                                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                                .onChange(of: masterToggle) { newValue in
+                                    if newValue {
+                                        requestNotificationPermission()
+                                    }
                                 }
-                            )) {
-                                Text(key)
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 20, weight: .medium))
-                            }
-                            .toggleStyle(SwitchToggleStyle(tint: .blue))
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.black.opacity(0.6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .padding(.horizontal)
                         }
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .padding(.horizontal, 24)
+                        
+                        if masterToggle {
+                            VStack(spacing: 16) {
+                                ForEach(notifications.keys.sorted(), id: \.self) { key in
+                                    HStack {
+                                        Text(key)
+                                            .foregroundColor(.white)
+                                            .font(.system(size: 18))
+                                        Spacer()
+                                        Toggle("", isOn: Binding(
+                                            get: { self.notifications[key] ?? false },
+                                            set: { newValue in
+                                                self.notifications[key] = newValue
+                                                saveNotificationsToFirestore()
+                                                if newValue {
+                                                    scheduleNotification(for: key)
+                                                }
+                                            }
+                                        ))
+                                        .labelsHidden()
+                                        .toggleStyle(SwitchToggleStyle(tint: .blue))
+                                    }
+                                    .padding()
+                                    .background(Color.black.opacity(0.4))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    .padding(.horizontal, 24)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                                }
+                            }
+                            .padding(.top, 20)
+                            .animation(.easeInOut(duration: 0.5), value: masterToggle)
+                        }
+
+                        Spacer().frame(height: 50)
                     }
-                    
-                    Spacer()
+                    .padding(.bottom, 40)
                 }
             }
+            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                loadNotificationsFromFirestore() // Load user settings on appear
+                loadNotificationsFromFirestore()
             }
         }
     }
-    
-    // Save settings to Firestore
+
     func saveNotificationsToFirestore() {
         let db = Firestore.firestore()
         db.collection("users").document(userID).setData([
@@ -85,7 +112,6 @@ struct NotificationsView: View {
         }
     }
 
-    // Load user notification preferences from Firestore
     func loadNotificationsFromFirestore() {
         let db = Firestore.firestore()
         db.collection("users").document(userID).getDocument { document, error in
@@ -96,7 +122,37 @@ struct NotificationsView: View {
             if let data = document?.data(), let savedNotifications = data["notifications"] as? [String: Bool] {
                 DispatchQueue.main.async {
                     self.notifications = savedNotifications
+                    self.masterToggle = savedNotifications.values.contains(true)
                 }
+            }
+        }
+    }
+    
+    func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            if granted {
+                print("Notification permission granted")
+            } else {
+                print("Notification permission denied")
+            }
+        }
+    }
+
+    func scheduleNotification(for key: String) {
+        let content = UNMutableNotificationContent()
+        content.title = "You have a new \(key)"
+        content.body = "This is a notification about your \(key.lowercased())."
+        content.sound = .default
+        
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
+        
+        let request = UNNotificationRequest(identifier: key, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("DEBUG: Failed to schedule notification: \(error.localizedDescription)")
+            } else {
+                print("DEBUG: \(key) notification scheduled successfully")
             }
         }
     }
