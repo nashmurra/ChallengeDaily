@@ -4,16 +4,18 @@ import FirebaseFirestore
 
 struct ProfileView: View {
     @State private var showSettings = false
-    @State private var showProfilePhoto = false
     @State private var profileImage: UIImage?
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
-    
-    //@Binding var currentViewShowing: String
 
-    // Add state variables for username and email
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage?
+    @State private var isUploading = false
+
     @State private var username: String = ""
     @State private var email: String = ""
+    
+    @State private var userPosts: [UIImage] = []
 
     var body: some View {
         NavigationStack {
@@ -22,20 +24,24 @@ struct ProfileView: View {
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-                
-                VStack {
-                    headerView
-                    userInfoDetails
-                    Spacer()
+
+                ScrollView {
+                    VStack(alignment: .center, spacing: 16) {
+                        headerView
+                        userInfoDetails
+                        postGrid
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
                 }
                 .navigationBarBackButtonHidden(true)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
-                            //presentationMode.wrappedValue.dismiss() // Navigate back
                             withAnimation {
-                                //self.currentViewShowing = "main"
+                                // Dismiss or change view
                             }
                         }) {
                             HStack {
@@ -49,9 +55,8 @@ struct ProfileView: View {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
                             withAnimation {
-                                //self.currentViewShowing = "settings"
+                                showSettings = true
                             }
-                            //showSettings = true
                         }) {
                             HStack {
                                 Image(systemName: "ellipsis")
@@ -63,20 +68,23 @@ struct ProfileView: View {
                     }
                 }
             }
-            .navigationDestination(isPresented: $showSettings) {
-                //SettingsView()
-            }
-            .navigationDestination(isPresented: $showProfilePhoto) {
-                ProfilePhotoSelectorView(profileImage: $profileImage, userID: userID)
+            .sheet(isPresented: $showImagePicker, onDismiss: {
+                if let selectedImage = selectedImage {
+                    uploadImageToFirestore(selectedImage)
+                }
+            }) {
+                ImagePicker(selectedImage: $selectedImage)
             }
             .onAppear {
-                fetchProfileImage() // Fetch the profile image
-                fetchUserData()    // Fetch the user's data (username and email)
+                fetchProfileImage()
+                fetchUserData()
+                fetchUserPosts()
             }
         }
     }
 
-    // Fetch user data (username and email) from Firestore
+    // MARK: - Firestore Fetches
+
     func fetchUserData() {
         let db = Firestore.firestore()
         db.collection("users")
@@ -98,7 +106,6 @@ struct ProfileView: View {
             }
     }
 
-    // Fetch profile image from Firestore
     func fetchProfileImage() {
         let db = Firestore.firestore()
         db.collection("users").document(userID).getDocument { snapshot, error in
@@ -120,89 +127,145 @@ struct ProfileView: View {
             }
         }
     }
-}
 
-extension ProfileView {
-    var headerView: some View {
-        NavigationStack {
-            VStack {
-                ZStack {
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 100, height: 100)
-                        .overlay(
-                            Group {
-                                if let profileImage = profileImage {
-                                    Image(uiImage: profileImage)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 100, height: 100)
-                                        .clipShape(Circle())
-                                } else {
-                                    Image("thanos")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 100, height: 100)
-                                        .clipShape(Circle())
-                                }
-                            }
-                        )
-                    
-                    Button(action: {
-                        showProfilePhoto = true
-                    }) {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.black)
-                            .padding(8)
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white, lineWidth: 1)
-                            )
+    func fetchUserPosts() {
+        let db = Firestore.firestore()
+        db.collection("posts")
+            .whereField("userID", isEqualTo: userID)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("DEBUG: Failed to fetch posts: \(error.localizedDescription)")
+                    return
+                }
+
+                guard let documents = snapshot?.documents else {
+                    print("DEBUG: No posts found")
+                    return
+                }
+
+                var images: [UIImage] = []
+
+                for document in documents {
+                    if let base64 = document["imageData"] as? String,
+                       let data = Data(base64Encoded: base64),
+                       let image = UIImage(data: data) {
+                        images.append(image)
                     }
-                    .offset(x: 30, y: 30)
+                }
+
+                DispatchQueue.main.async {
+                    self.userPosts = images
+                }
+            }
+    }
+
+    func uploadImageToFirestore(_ image: UIImage) {
+        isUploading = true
+        ImageUploader.uploadImage(image: image) { base64String in
+            DispatchQueue.main.async {
+                self.isUploading = false
+                guard let base64String = base64String else {
+                    print("Failed to encode image")
+                    return
+                }
+
+                let db = Firestore.firestore()
+                db.collection("users").document(userID).setData([
+                    "profileImage": base64String
+                ], merge: true) { error in
+                    if let error = error {
+                        print("DEBUG: Failed to save image to Firestore: \(error.localizedDescription)")
+                    } else {
+                        print("DEBUG: Image saved to Firestore successfully")
+                        self.profileImage = image
+                    }
                 }
             }
         }
     }
-    
+}
+
+// MARK: - Subviews
+
+extension ProfileView {
+    var headerView: some View {
+        HStack {
+            Spacer()
+            ZStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 100, height: 100)
+                    .overlay(
+                        Group {
+                            if let profileImage = profileImage {
+                                Image(uiImage: profileImage)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            } else {
+                                Image("thanos")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            }
+                        }
+                    )
+
+                Button(action: {
+                    showImagePicker = true
+                }) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.black)
+                        .padding(8)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white, lineWidth: 1)
+                        )
+                }
+                .offset(x: 30, y: 30)
+            }
+            Spacer()
+        }
+    }
+
     var userInfoDetails: some View {
         VStack(spacing: 0) {
-            // Display the username
-            Text(username) // Username from Firestore
+            Text(username)
                 .font(.title.bold())
                 .foregroundColor(.white)
-            
-            // Display the user ID after "@"
-            Text("@\(userID)") // User ID from @AppStorage
+
+            Text("@\(userID)")
                 .font(.subheadline)
                 .foregroundColor(.gray)
-            
+
             Text("Goofy Goober")
                 .font(.subheadline)
                 .foregroundColor(.white)
                 .padding(.top, 6)
-            
+
             HStack {
                 Text("Followers")
                     .font(.subheadline.bold())
                     .foregroundColor(.white)
                     .padding(.top, 6)
-                
+
                 Text("1.2M")
                     .font(.subheadline.bold())
                     .foregroundColor(.white)
                     .padding(.top, 6)
-                
+
                 Spacer().frame(width: 40)
-                
+
                 Text("Following")
                     .font(.subheadline.bold())
                     .foregroundColor(.white)
                     .padding(.top, 6)
-                
+
                 Text("10K")
                     .font(.subheadline.bold())
                     .foregroundColor(.white)
@@ -210,7 +273,22 @@ extension ProfileView {
             }
         }
     }
+
+    var postGrid: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 3), spacing: 4) {
+            ForEach(userPosts.indices, id: \.self) { index in
+                Image(uiImage: userPosts[index])
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: UIScreen.main.bounds.width / 3 - 6, height: UIScreen.main.bounds.width / 3 - 6)
+                    .clipped()
+                    .cornerRadius(6)
+            }
+        }
+        .padding(.top, 10)
+    }
 }
+
 
 #Preview {
     //ProfileView()
