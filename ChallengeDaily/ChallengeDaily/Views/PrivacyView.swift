@@ -42,7 +42,7 @@ struct PrivacyView: View {
                                 .font(.title3)
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
-                            Text("Only approved followers can see your content.")
+                            Text("Only friends can see your content.")
                                 .font(.footnote)
                                 .foregroundColor(.white.opacity(0.6))
                         }

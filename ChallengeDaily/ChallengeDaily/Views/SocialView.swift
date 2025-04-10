@@ -86,6 +86,8 @@ struct SocialView: View {
         }
     }
 
+    // MARK: - Subviews
+    
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
@@ -97,20 +99,16 @@ struct SocialView: View {
                 .textInputAutocapitalization(.never)
 
             if !searchText.isEmpty {
-                clearSearchButton
+                Button(action: { searchText = "" }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
             }
         }
         .padding(10)
         .background(Color.gray.opacity(0.2))
         .cornerRadius(8)
         .padding(.horizontal)
-    }
-
-    private var clearSearchButton: some View {
-        Button(action: { searchText = "" }) {
-            Image(systemName: "xmark.circle.fill")
-                .foregroundColor(.gray)
-        }
     }
 
     private var friendsSection: some View {
@@ -136,27 +134,30 @@ struct SocialView: View {
 
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(friends) { friend in
-                        VStack(spacing: 8) {
-                            AsyncImage(url: URL(string: friend.profilePic)) { image in
-                                image.resizable()
-                            } placeholder: {
-                                Image(systemName: "person.circle.fill")
-                                    .resizable()
-                            }
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 60, height: 60)
-                            .clipShape(Circle())
+                        NavigationLink(destination: UserProfileView(userID: friend.id)) {
+                            VStack(spacing: 8) {
+                                AsyncImage(url: URL(string: friend.profilePic)) { image in
+                                    image.resizable()
+                                } placeholder: {
+                                    Image(systemName: "person.circle.fill")
+                                        .resizable()
+                                }
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 60, height: 60)
+                                .clipShape(Circle())
 
-                            Text(friend.username)
-                                .font(.caption)
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
+                                Text(friend.username)
+                                    .font(.caption)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                            }
+                            .frame(width: 95, height: 100)
+                            .padding()
+                            .background(Color.gray.opacity(0.2))
+                            .cornerRadius(10)
                         }
-                        .frame(width: 95, height: 100)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(10)
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal)
@@ -193,49 +194,53 @@ struct SocialView: View {
     }
 
     private func friendRow(for user: UserProfile) -> some View {
-        HStack {
-            AsyncImage(url: URL(string: user.profilePic)) { image in
-                image.resizable()
-            } placeholder: {
-                Image(systemName: "person.circle.fill")
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
+        NavigationLink(destination: UserProfileView(userID: user.id)) {
+            HStack {
+                AsyncImage(url: URL(string: user.profilePic)) { image in
+                    image.resizable()
+                } placeholder: {
+                    Image(systemName: "person.circle.fill")
+                }
+                .frame(width: 40, height: 40)
+                .clipShape(Circle())
 
-            Text(user.username)
-                .foregroundColor(.white)
-                .font(.system(size: 18, weight: .medium))
-                .padding(.leading, 10)
+                Text(user.username)
+                    .foregroundColor(.white)
+                    .font(.system(size: 18, weight: .medium))
+                    .padding(.leading, 10)
 
-            Spacer()
+                Spacer()
 
-            if friends.contains(where: { $0.id == user.id }) {
-                Image(systemName: "checkmark.circle.fill")
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(.green)
-            } else if friendRequests.contains(where: { $0.id == user.id }) || outgoingRequests.contains(user.id) {
-                Text("Pending")
-                    .foregroundColor(.yellow)
-                    .font(.caption)
-            } else {
-                Button(action: {
-                    sendFriendRequest(to: user)
-                }) {
-                    Image(systemName: "plus.circle.fill")
+                if friends.contains(where: { $0.id == user.id }) {
+                    Image(systemName: "checkmark.circle.fill")
                         .resizable()
                         .frame(width: 24, height: 24)
-                        .foregroundColor(.pink)
+                        .foregroundColor(.green)
+                } else if friendRequests.contains(where: { $0.id == user.id }) || outgoingRequests.contains(user.id) {
+                    Text("Pending")
+                        .foregroundColor(.yellow)
+                        .font(.caption)
+                } else {
+                    Button(action: {
+                        sendFriendRequest(to: user)
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(.pink)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
+            .padding()
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(10)
         }
-        .padding()
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(10)
+        .buttonStyle(PlainButtonStyle())
     }
 
     // MARK: - Firebase Functions
-
+    
     private func loadFriends() {
         let db = Firestore.firestore()
         db.collection("users").document(userID).getDocument { document, error in
@@ -350,3 +355,210 @@ struct SocialView: View {
     }
 }
 
+struct UserProfileView: View {
+    let userID: String
+    @Environment(\.presentationMode) var presentationMode
+    @State private var profileImage: UIImage?
+    @State private var username: String = ""
+    @State private var email: String = ""
+    @State private var friendCount: Int = 0
+    @StateObject private var postViewModel = PostViewModel()
+    
+    let columns = [
+        GridItem(.flexible(), spacing: 1),
+        GridItem(.flexible(), spacing: 1),
+        GridItem(.flexible(), spacing: 1)
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Image("appBackground")
+                    .resizable()
+                    .scaledToFill()
+                    .ignoresSafeArea()
+                
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.black.opacity(0.6), Color.clear]),
+                    startPoint: .top,
+                    endPoint: .center
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        headerView
+                        userInfoDetails
+                        
+                        // Posts grid
+                        if !postViewModel.viewModelPosts.isEmpty {
+                            LazyVGrid(columns: columns, spacing: 1) {
+                                ForEach(postViewModel.viewModelPosts) { post in
+                                    NavigationLink {
+                                        PostDetailView(post: post)
+                                    } label: {
+                                        if let uiImage = decodeBase64ToImage(post.image) {
+                                            Image(uiImage: uiImage)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: (UIScreen.main.bounds.width / 3) - 1, height: (UIScreen.main.bounds.width / 3) - 1)
+                                                .clipped()
+                                        } else {
+                                            Rectangle()
+                                                .foregroundColor(.gray)
+                                                .frame(width: (UIScreen.main.bounds.width / 3) - 1, height: (UIScreen.main.bounds.width / 3) - 1)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.top, 8)
+                        } else {
+                            emptyStateView
+                        }
+                    }
+                    .padding(.bottom)
+                }
+                .navigationBarBackButtonHidden(true)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        backButton
+                    }
+                }
+            }
+            .onAppear {
+                fetchUserProfile()
+                postViewModel.fetchPostsForUser(userID: userID)
+            }
+        }
+    }
+    
+    // MARK: - Subviews
+    
+    private var headerView: some View {
+        VStack {
+            ZStack {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 100, height: 100)
+                    .overlay(
+                        Group {
+                            if let profileImage = profileImage {
+                                Image(uiImage: profileImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                            } else {
+                                Image(systemName: "person.circle.fill")
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: 100, height: 100)
+                                    .clipShape(Circle())
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    )
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var userInfoDetails: some View {
+        VStack(spacing: 0) {
+            Text(username)
+                .font(.title.bold())
+                .foregroundColor(.white)
+            
+            Text("@\(userID.prefix(8))")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+                .padding(.bottom, 16)
+            
+            HStack(spacing: 24) {
+                VStack {
+                    Text("\(postViewModel.viewModelPosts.count)")
+                        .font(.headline.bold())
+                        .foregroundColor(.white)
+                    Text("Posts")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+                
+                VStack {
+                    Text("\(friendCount)")
+                        .font(.headline.bold())
+                        .foregroundColor(.white)
+                    Text("Friends")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.top, 8)
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack {
+            Text("No posts yet")
+                .foregroundColor(.white)
+                .font(.headline)
+                .padding(.top, 40)
+            
+            Text("This user hasn't posted anything yet!")
+                .foregroundColor(.gray)
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+                .padding(.top, 8)
+        }
+    }
+    
+    private var backButton: some View {
+        Button(action: {
+            presentationMode.wrappedValue.dismiss()
+        }) {
+            Image(systemName: "chevron.left")
+                .foregroundColor(.white)
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func fetchUserProfile() {
+        let db = Firestore.firestore()
+        db.collection("users")
+            .document(userID)
+            .getDocument { snapshot, error in
+                if let error = error {
+                    print("DEBUG: Failed to fetch user data: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let data = snapshot?.data() else {
+                    print("DEBUG: No user data found")
+                    return
+                }
+                
+                DispatchQueue.main.async {
+                    self.username = data["username"] as? String ?? "Unknown"
+                    self.email = data["email"] as? String ?? "No email"
+                    self.friendCount = (data["friends"] as? [String])?.count ?? 0
+                    
+                    if let base64String = data["profileImage"] as? String,
+                       let imageData = Data(base64Encoded: base64String),
+                       let image = UIImage(data: imageData) {
+                        self.profileImage = image
+                    }
+                }
+            }
+    }
+    
+    private func decodeBase64ToImage(_ base64String: String) -> UIImage? {
+        guard let imageData = Data(base64Encoded: base64String),
+              let image = UIImage(data: imageData) else {
+            return nil
+        }
+        return image
+    }
+}

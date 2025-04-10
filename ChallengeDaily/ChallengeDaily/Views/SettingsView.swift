@@ -51,7 +51,6 @@ struct SettingsView: View {
                         settingsSection(title: "Settings") {
                             SettingsButton(title: "Privacy", icon: "lock.fill") { showPrivacy = true }
                             SettingsButton(title: "Notifications", icon: "bell.fill") { showNotifications = true }
-                            SettingsButton(title: "Preferences", icon: "slider.horizontal.3") { showPreferences = true }
                         }
                         
                         settingsSection(title: "About") {
@@ -64,9 +63,7 @@ struct SettingsView: View {
                                 }
                             }
                             
-                            SettingsButton(title: "About", icon: "info.circle") {
-                                // Navigate to AboutView
-                            }
+                            SettingsButton(title: "About", icon: "info.circle") { showAbout = true }
                             
                             SettingsButton(title: "Rate", icon: "hand.thumbsup.fill") {
                                 if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
