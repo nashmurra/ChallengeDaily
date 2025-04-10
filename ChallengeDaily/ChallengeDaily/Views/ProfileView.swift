@@ -64,14 +64,13 @@ struct ProfileView: View {
                         }
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            showSettings = true
-                        }) {
-                            Image(systemName: "ellipsis")
+                        NavigationLink(destination: SettingsView()) {
+                            Image(systemName: "gearshape.fill")
                                 .foregroundColor(.white)
                         }
                     }
                 }
+
             }
             .sheet(isPresented: $showImagePicker, onDismiss: {
                 if let selectedImage = selectedImage {
