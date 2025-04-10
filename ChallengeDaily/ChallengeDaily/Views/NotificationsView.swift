@@ -9,6 +9,7 @@ import FirebaseFirestore
 import UserNotifications
 
 struct NotificationsView: View {
+    @Environment(\.presentationMode) var presentationMode
     @AppStorage("uid") var userID: String = ""
     @State private var masterToggle: Bool = false
     @State private var notifications: [String: Bool] = [
@@ -21,7 +22,7 @@ struct NotificationsView: View {
     ]
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Image("appBackground")
                     .resizable()
@@ -47,6 +48,14 @@ struct NotificationsView: View {
                                 .onChange(of: masterToggle) { newValue in
                                     if newValue {
                                         requestNotificationPermission()
+                                    } else {
+                                        // Turn off all individual toggles
+                                        for key in notifications.keys {
+                                            notifications[key] = false
+                                        }
+                                        saveNotificationsToFirestore()
+                                        // Remove all pending notifications
+                                        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
                                     }
                                 }
                         }
@@ -95,6 +104,19 @@ struct NotificationsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 loadNotificationsFromFirestore()
+            }
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.white)
+                        .imageScale(.large)
+                }
             }
         }
     }
@@ -157,3 +179,4 @@ struct NotificationsView: View {
         }
     }
 }
+
