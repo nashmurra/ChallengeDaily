@@ -13,6 +13,8 @@ struct SignupView: View {
 
     @State private var accountCreated = false  // Track login state
 
+    @State private var currentPage = 0  // New for paging UI
+
     private func isValidPassword(_ password: String) -> Bool {
         let passwordRegex = NSPredicate(
             format: "SELF MATCHES %@",
@@ -20,38 +22,52 @@ struct SignupView: View {
         return passwordRegex.evaluate(with: password)
     }
 
+    private func isValidUsername(_ username: String) -> Bool {
+        let regex = "^(?![_.])[a-zA-Z0-9._]{3,15}(?<![_.])$"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", regex)
+        return predicate.evaluate(with: username)
+    }
+
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
-
-    /*
-
-     */
 
     var body: some View {
 
         NavigationView {
             ZStack {
 
-                Image("BackgroundScreen")
+                Image("appBackground")
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
 
                 VStack {
 
-                    Spacer().frame(height: 20)
+                    Spacer().frame(height: 120)
 
-                    Text("Create Your Account")
-                        .font(.system(size: 50, weight: .heavy))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundColor(Color.whiteText)
-                        .padding(.top, 50)
-                        .padding()
-                        .padding(.horizontal)
+                    Image(systemName: "target")
+                        .resizable()
+                        .frame(width: 70, height: 70)
+                        .foregroundColor(Color.white)
+
+                    Spacer().frame(height: 10)
+
+                    HStack(spacing: 0) {
+                        Text("Create")
+                            .font(.largeTitle)
+                            .fontWeight(.light)
+                            .foregroundColor(Color.white)
+
+                        Text("Account")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color.white)
+                    }
 
                     Spacer().frame(height: 50)
 
-                    VStack(spacing: 0) {
+                    TabView(selection: $currentPage) {
 
+                        // Email Page
                         VStack(spacing: 0) {
                             Spacer().frame(height: 10)
 
@@ -59,11 +75,11 @@ struct SignupView: View {
 
                                 Text("Email")
                                     .font(.footnote)
-                                    .fontWeight(.medium)
+                                    .fontWeight(.light)
                                     .frame(
                                         maxWidth: .infinity, alignment: .leading
                                     )
-                                    .foregroundColor(Color.primaryAccent)
+                                    .foregroundColor(Color.white)
                                     .padding(.top)
                                     .padding(.leading)
 
@@ -75,39 +91,43 @@ struct SignupView: View {
 
                                     Spacer()
 
-                                    if email.count != 0 {
+                                    if isValidUsername(username) {
                                         Image(systemName: "checkmark")
                                             .fontWeight(.bold)
-                                            .foregroundColor(.green)
+                                            .foregroundColor(Color.greenColor)
+                                    } else {
+                                        Image(systemName: "xmark")
+                                            .fontWeight(.bold)
+                                            .foregroundColor(Color.pinkColor)
                                     }
-                                }
-                                .padding(.bottom)
-                                .padding(.horizontal)
-                                .padding(.top, -10)
-                                //.padding()
 
+                                }
+                                .padding(.horizontal)
+                                .padding(.bottom, 1)
+
+                                // More visible divider
+                                Divider()
+                                    .background(Color.white)  // Make it more visible
+                                    .frame(height: 1)  // Adjust thickness
+                                    .padding(.horizontal)
                             }
-                            .background(
-                                RoundedRectangle(cornerRadius: 0)
-                                    //.stroke(lineWidth: 2)
-                                    .fill(Color.dark)
-                            )
+                            .background(Color.clear)
                             .padding()
                             .padding(.horizontal)
                         }
+                        .tag(0)
 
+                        // Username Page
                         VStack(spacing: 0) {
-                            //Spacer().frame(height: 10)
-
                             VStack {
 
                                 Text("Username")
                                     .font(.footnote)
-                                    .fontWeight(.medium)
+                                    .fontWeight(.light)
                                     .frame(
                                         maxWidth: .infinity, alignment: .leading
                                     )
-                                    .foregroundColor(Color.primaryAccent)
+                                    .foregroundColor(Color.white)
                                     .padding(.top)
                                     .padding(.leading)
 
@@ -119,83 +139,85 @@ struct SignupView: View {
 
                                     Spacer()
 
-                                    if email.count != 0 {
+                                    if username.count != 0 {
                                         Image(systemName: "checkmark")
                                             .fontWeight(.bold)
-                                            .foregroundColor(.green)
+                                            .foregroundColor(Color.greenColor)
                                     }
                                 }
-                                .padding(.bottom)
                                 .padding(.horizontal)
-                                .padding(.top, -10)
-                                //.padding()
+                                .padding(.bottom, 1)
+
+                                // More visible divider
+                                Divider()
+                                    .background(Color.white)  // Make it more visible
+                                    .frame(height: 1)  // Adjust thickness
+                                    .padding(.horizontal)
 
                             }
-                            .background(
-                                RoundedRectangle(cornerRadius: 0)
-                                    //.stroke(lineWidth: 2)
-                                    .fill(Color.dark)
-                            )
+                            .background(Color.clear)
                             .padding()
                             .padding(.horizontal)
                         }
+                        .tag(1)
 
+                        // Password Page
                         VStack(spacing: 0) {
-                            //Spacer().frame(height: 10)
-
                             VStack {
 
                                 Text("Password")
                                     .font(.footnote)
-                                    .fontWeight(.medium)
+                                    .fontWeight(.light)
                                     .frame(
                                         maxWidth: .infinity, alignment: .leading
                                     )
-                                    .foregroundColor(Color.primaryAccent)
+                                    .foregroundColor(Color.white)
                                     .padding(.top)
                                     .padding(.leading)
 
                                 HStack {
-                                    TextField("Password", text: $password)
+                                    SecureField("Password", text: $password)
                                         .foregroundColor(Color.white)
                                         .disableAutocorrection(true)
                                         .autocapitalization(.none)
 
                                     Spacer()
 
-                                    if email.count != 0 {
+                                    if isValidPassword(password) {
                                         Image(systemName: "checkmark")
                                             .fontWeight(.bold)
-                                            .foregroundColor(.green)
+                                            .foregroundColor(Color.greenColor)
                                     }
                                 }
-                                .padding(.bottom)
                                 .padding(.horizontal)
-                                .padding(.top, -10)
-                                //.padding()
+                                .padding(.bottom, 1)
+
+                                // More visible divider
+                                Divider()
+                                    .background(Color.white)  // Make it more visible
+                                    .frame(height: 1)  // Adjust thickness
+                                    .padding(.horizontal)
 
                             }
-                            .background(
-                                RoundedRectangle(cornerRadius: 0)
-                                    //.stroke(lineWidth: 2)
-                                    .fill(Color.dark)
-                            )
+                            .background(Color.clear)
                             .padding()
                             .padding(.horizontal)
                         }
+                        .tag(2)
 
+                        // Confirm Password Page
                         VStack {
-
                             Text("Confirm Password")
                                 .font(.footnote)
-                                .fontWeight(.medium)
+                                .fontWeight(.light)
+                                .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.primaryAccent)
+                                .foregroundColor(Color.white)
                                 .padding(.top)
                                 .padding(.leading)
 
                             HStack {
-                                TextField(
+                                SecureField(
                                     "Confirm Password", text: $confirmPassword
                                 )
                                 .foregroundColor(Color.white)
@@ -204,67 +226,106 @@ struct SignupView: View {
 
                                 Spacer()
 
-                                if email.count != 0 {
+                                if confirmPassword == password
+                                    && !confirmPassword.isEmpty
+                                {
                                     Image(systemName: "checkmark")
                                         .fontWeight(.bold)
-                                        .foregroundColor(.green)
+                                        .foregroundColor(Color.greenColor)
                                 }
                             }
-                            .padding(.bottom)
                             .padding(.horizontal)
-                            .padding(.top, -10)
-                            //.padding()
+                            .padding(.bottom, 1)
+
+                            // More visible divider
+                            Divider()
+                                .background(Color.white)  // Make it more visible
+                                .frame(height: 1)  // Adjust thickness
+                                .padding(.horizontal)
 
                         }
-                        .background(
-                            RoundedRectangle(cornerRadius: 0)
-                                //.stroke(lineWidth: 2)
-                                .fill(Color.dark)
-                        )
+                        .background(Color.clear)
                         .padding()
                         .padding(.horizontal)
+                        .tag(3)
 
-                        Spacer().frame(height: 40)
+                    }
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
+                    .frame(height: 250)  // Adjust height as needed
+                    .animation(.easeInOut, value: currentPage)
 
-                        Button {
-                            Auth.auth().createUser(
-                                withEmail: email, password: password
-                            ) { authResult, error in
+                    Spacer().frame(height: 20)
+
+                    // Arrow Controls
+                    HStack {
+                        Button(action: {
+                            if currentPage > 0 {
+                                currentPage -= 1
+                            }
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .padding()
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            if currentPage < 3 {
+                                currentPage += 1
+                            }
+                        }) {
+                            Image(systemName: "chevron.right")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .padding()
+                        }
+                    }
+                    .padding(.horizontal, 50)
+
+                    Spacer().frame(height: 40)
+
+                    Button {
+                        Auth.auth().createUser(
+                            withEmail: email, password: password
+                        ) { authResult, error in
+                            if let error = error {
+                                print(
+                                    "Error creating user: \(error.localizedDescription)"
+                                )
+                                return
+                            }
+
+                            guard let authResult = authResult else {
+                                return
+                            }
+
+                            let newUserID = authResult.user.uid
+                            userID = newUserID  // Save userID in AppStorage
+                            accountCreated = true
+
+                            let db = Firestore.firestore()
+
+                            // Fetch random challenges and store them in Firestore
+                            db.collection("challenges").getDocuments {
+                                snapshot, error in
                                 if let error = error {
                                     print(
-                                        "Error creating user: \(error.localizedDescription)"
+                                        "Error fetching challenges: \(error.localizedDescription)"
                                     )
                                     return
                                 }
 
-                                guard let authResult = authResult else {
-                                    return
-                                }
+                                let allChallenges =
+                                    snapshot?.documents.map {
+                                        $0.documentID
+                                    } ?? []
+                                let randomChallenges =
+                                    allChallenges.shuffled().prefix(4)
 
-                                let newUserID = authResult.user.uid
-                                userID = newUserID  // Save userID in AppStorage
-                                accountCreated = true
-
-                                let db = Firestore.firestore()
-
-                                // Fetch random challenges and store them in Firestore
-                                db.collection("challenges").getDocuments {
-                                    snapshot, error in
-                                    if let error = error {
-                                        print(
-                                            "Error fetching challenges: \(error.localizedDescription)"
-                                        )
-                                        return
-                                    }
-
-                                    let allChallenges =
-                                        snapshot?.documents.map {
-                                            $0.documentID
-                                        } ?? []
-                                    let randomChallenges =
-                                        allChallenges.shuffled().prefix(4)
-
-                                    db.collection("users").document(newUserID).setData(
+                                db.collection("users").document(newUserID)
+                                    .setData(
                                         [
                                             "userID": newUserID,
                                             "username": username,
@@ -275,8 +336,10 @@ struct SignupView: View {
                                             "findFriendsWithContacts": false,
                                             "contentFilter": "Everyone",
                                             "profileImage": "",
-                                            "currentChallengeID": randomChallenges.first ?? "",
-                                            "challenges": Array(randomChallenges),
+                                            "currentChallengeID":
+                                                randomChallenges.first ?? "",
+                                            "challenges": Array(
+                                                randomChallenges),
                                             "lastUpdated": getFormattedDate(),
                                             "notifications": [
                                                 "Friend Requests": false,
@@ -290,46 +353,50 @@ struct SignupView: View {
                                             "friendRequests": [],
                                             "blockedUsers": [],
                                             "friendCount": 0,
-                                            "pendingFriendRequestsCount": 0
+                                            "pendingFriendRequestsCount": 0,
                                         ],
                                         merge: true
                                     ) { error in
                                         if let error = error {
-                                            print("Error creating user document: \(error.localizedDescription)")
+                                            print(
+                                                "Error creating user document: \(error.localizedDescription)"
+                                            )
                                         } else {
-                                            print("User document created successfully with friends data!")
+                                            print(
+                                                "User document created successfully with friends data!"
+                                            )
                                         }
                                     }
-                                }
                             }
-                        } label: {
-                            Text("Sign Up")
-                                .foregroundColor(Color.white)
-                                .font(.subheadline)
-                                .fontWeight(.bold)
-                                .frame(maxWidth: .infinity)
-                                .padding(17)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(Color.secondaryAccent)
-                                )
-                                .padding(.horizontal, 25)
                         }
-
-                        NavigationLink(
-                            destination: MainView(), isActive: $accountCreated
-                        ) {
-                            EmptyView()
-                        }
-
-                        Spacer()
+                    } label: {
+                        Text("Sign Up")
+                            .foregroundColor(Color.black).opacity(0.6)
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .frame(maxWidth: .infinity)
+                            .padding(12)
+                            .background(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.tealColor, Color.greenColor,
+                                    ]),
+                                    startPoint: .leading, endPoint: .trailing)
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .padding(.horizontal, 100)
                     }
+
+                    NavigationLink(
+                        destination: MainView(), isActive: $accountCreated
+                    ) {
+                        EmptyView()
+                    }
+
+                    Spacer()
                 }
             }
-
-
         }
-
     }
 
     private func getFormattedDate() -> String {
