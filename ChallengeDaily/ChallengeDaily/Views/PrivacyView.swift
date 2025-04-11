@@ -11,7 +11,6 @@ import FirebaseFirestore
 struct PrivacyView: View {
     @State private var isPrivate: Bool = false
     @State private var findFriendsWithContacts: Bool = false
-    @State private var showBlockedUsers = false
     var userID: String
 
     var body: some View {
@@ -75,29 +74,10 @@ struct PrivacyView: View {
                     .background(Color.black.opacity(0.6))
                     .cornerRadius(12)
                     .padding(.horizontal)
-                    
-                    Button(action: { showBlockedUsers = true }) {
-                        HStack {
-                            Text("Blocked Users")
-                                .font(.title3)
-                                .fontWeight(.medium)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                        }
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
                 }
                 
                 Spacer()
             }
-        }
-        .sheet(isPresented: $showBlockedUsers) {
-            BlockedUsersView()
         }
         .onAppear {
             loadPrivacySettings()

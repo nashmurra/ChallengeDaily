@@ -45,19 +45,17 @@ struct NotificationsView: View {
                             Toggle("", isOn: $masterToggle.animation())
                                 .labelsHidden()
                                 .toggleStyle(SwitchToggleStyle(tint: .blue))
-                                .onChange(of: masterToggle) { newValue in
-                                    if newValue {
-                                        requestNotificationPermission()
-                                    } else {
-                                        // Turn off all individual toggles
-                                        for key in notifications.keys {
-                                            notifications[key] = false
-                                        }
-                                        saveNotificationsToFirestore()
-                                        // Remove all pending notifications
-                                        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+                            onChange(of: masterToggle) { _, newValue in
+                                if newValue {
+                                    requestNotificationPermission()
+                                } else {
+                                    for key in notifications.keys {
+                                        notifications[key] = false
                                     }
+                                    saveNotificationsToFirestore()
+                                    UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
                                 }
+                            }
                         }
                         .padding()
                         .background(Color.black.opacity(0.5))

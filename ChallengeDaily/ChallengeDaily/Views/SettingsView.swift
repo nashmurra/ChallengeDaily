@@ -13,7 +13,6 @@ struct SettingsView: View {
     @StateObject var userViewModel = UserViewModel()
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
-    @State private var showPastChallenges = false
     @State private var showAchievements = false
     @State private var showPreferences = false
     @State private var showNotifications = false
@@ -21,7 +20,7 @@ struct SettingsView: View {
     @State private var showAbout = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Image("appBackground")
                     .resizable()
@@ -44,7 +43,6 @@ struct SettingsView: View {
                     
                     List {
                         settingsSection(title: "Features") {
-                            SettingsButton(title: "Past Challenges", icon: "clock.arrow.circlepath") { showPastChallenges = true }
                             SettingsButton(title: "Achievements", icon: "star.fill") { showAchievements = true }
                         }
                         
@@ -97,7 +95,6 @@ struct SettingsView: View {
                     .listStyle(InsetGroupedListStyle())
                 }
             }
-            .navigationDestination(isPresented: $showPastChallenges) { PastChallengesView() }
             .navigationDestination(isPresented: $showAchievements) { AchievementsView() }
             .navigationDestination(isPresented: $showPreferences) { PreferencesView() }
             .navigationDestination(isPresented: $showPrivacy) { PrivacyView(userID: userID) }

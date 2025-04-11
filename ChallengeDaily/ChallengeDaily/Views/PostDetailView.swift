@@ -13,7 +13,17 @@ struct PostDetailView: View {
     
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Image("appBackground")
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+            
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black.opacity(0.6), Color.clear]),
+                startPoint: .top,
+                endPoint: .center
+            )
+            .ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
