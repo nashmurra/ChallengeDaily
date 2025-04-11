@@ -133,7 +133,15 @@ struct StartView: View {
                         .padding(.horizontal, 75)
                 }
                 .sheet(isPresented: $showingLoginView) {
-                    LoginView(isPresented: $showingLoginView)  // Pass binding
+                    LoginView(
+                        isPresented: $showingLoginView,
+                        onSwitchToSignup: {
+                            // This runs after the login view is dismissed
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                self.showingSignUpView = true
+                            }
+                        }
+                    )
                 }
                 .offset(y:55)
                 

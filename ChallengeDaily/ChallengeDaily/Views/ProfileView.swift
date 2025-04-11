@@ -64,6 +64,25 @@ struct ProfileView: View {
                     .padding(.bottom, 20)
                 }
             }
+            .overlay(
+                VStack {
+                    HStack {
+                        Spacer()
+                        NavigationLink(destination: SettingsView()) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(10)
+                                //.background(Color.black.opacity(0.6))
+                                //.clipShape(Circle())
+                        }
+                    }
+                    .padding(.top, 0)
+                    .padding(.trailing, 20)
+
+                    Spacer()
+                }
+            )
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -206,9 +225,10 @@ struct ProfileView: View {
     
     // MARK: - Methods
     private func loadProfileData() {
+        postViewModel.fetchPosts()
         fetchProfileImage()
         fetchUserData()
-        postViewModel.fetchPostsForUser(userID: userID)
+        //postViewModel.fetchPostsForUser(userID: userID)
     }
     
     private func handleImagePickerDismiss() {

@@ -7,7 +7,14 @@ struct LoginView: View {
     
     @State private var email: String = ""
     @State private var password: String = ""
-    @Binding var isPresented: Bool  // <-- Add binding to control dismissal
+    @Binding var isPresented: Bool
+    
+    // Added callback to switch to SignupView
+    var onSwitchToSignup: () -> Void
+    
+    // Alert for password reset
+    @State private var showAlert = false
+    @State private var alertMessage = ""
     
     private func isValidPassword(_ password: String) -> Bool {
         let passwordRegex = NSPredicate(format: "SELF MATCHES %@", "^(?=.*[a-z])(?=.*[$@$#!%*?&])(?=.*[A-Z]).{6,}$")
@@ -21,7 +28,7 @@ struct LoginView: View {
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-
+                
                 VStack {
                     Spacer().frame(height: 120)
                     
@@ -33,19 +40,19 @@ struct LoginView: View {
                     Spacer().frame(height: 10)
                     
                     HStack(spacing: 0) {
-                        Text("sign")
+                        Text("Log")
                             .font(.largeTitle)
                             .fontWeight(.light)
                             .foregroundColor(Color.white)
                         
-                        Text("in")
+                        Text("In")
                             .font(.largeTitle)
                             .fontWeight(.bold)
                             .foregroundColor(Color.white)
                     }
-
+                    
                     Spacer().frame(height: 50)
-
+                    
                     VStack(spacing: 0) {
                         Spacer().frame(height: 10)
                         
@@ -57,35 +64,33 @@ struct LoginView: View {
                                 .foregroundColor(Color.gray)
                                 .padding(.top)
                                 .padding(.leading)
-
+                            
                             HStack {
                                 TextField("Email", text: $email)
                                     .foregroundColor(Color.white)
                                     .disableAutocorrection(true)
                                     .autocapitalization(.none)
-
+                                
                                 Spacer()
-
-                                if email.count != 0 {
+                                
+                                if !email.isEmpty {
                                     Image(systemName: "checkmark")
                                         .fontWeight(.bold)
                                         .foregroundColor(.green)
                                 }
                             }
                             .padding(.horizontal)
-                           // .padding(.top, -10)
                             .padding(.bottom, 1)
                             
-                            // More visible divider
                             Divider()
-                                .background(Color.white) // Make it more visible
-                                .frame(height: 1) // Adjust thickness
+                                .background(Color.white)
+                                .frame(height: 1)
                                 .padding(.horizontal)
                         }
                         .background(Color.clear)
                         .padding()
                         .padding(.horizontal)
-
+                        
                         VStack {
                             Text("Password")
                                 .font(.footnote)
@@ -94,36 +99,48 @@ struct LoginView: View {
                                 .foregroundColor(Color.gray)
                                 .padding(.top)
                                 .padding(.leading)
-
+                            
                             HStack {
                                 SecureField("Password", text: $password)
                                     .foregroundColor(Color.white)
                                     .disableAutocorrection(true)
                                     .autocapitalization(.none)
-
+                                
                                 Spacer()
-
-                                if password.count != 0 {
+                                
+                                if !password.isEmpty {
                                     Image(systemName: "checkmark")
                                         .fontWeight(.bold)
                                         .foregroundColor(.green)
                                 }
                             }
                             .padding(.horizontal)
-                            //.padding(.top, -10)
                             .padding(.bottom, 1)
                             
                             Divider()
-                                .background(Color.white) // Make it more visible
-                                .frame(height: 1) // Adjust thickness
+                                .background(Color.white)
+                                .frame(height: 1)
                                 .padding(.horizontal)
                         }
                         .background(Color.clear)
                         .padding()
                         .padding(.horizontal)
-
+                        
                         Button(action: {
-                            // Forgot Password Action
+                            guard !email.isEmpty else {
+                                alertMessage = "Please enter your email address first."
+                                showAlert = true
+                                return
+                            }
+                            
+                            Auth.auth().sendPasswordReset(withEmail: email) { error in
+                                if let error = error {
+                                    alertMessage = error.localizedDescription
+                                } else {
+                                    alertMessage = "Password reset email sent! Check your inbox."
+                                }
+                                showAlert = true
+                            }
                         }) {
                             Text("Forgot Password?")
                                 .font(.footnote)
@@ -135,19 +152,21 @@ struct LoginView: View {
                         .padding(.top, -10)
                         
                         Spacer().frame(height: 40)
-
+                        
                         Button {
                             Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
                                 if let error = error {
                                     print(error.localizedDescription)
+                                    alertMessage = error.localizedDescription
+                                    showAlert = true
                                     return
                                 }
-
+                                
                                 if let authResult = authResult {
                                     print(authResult.user.uid)
                                     withAnimation {
                                         userID = authResult.user.uid
-                                        isPresented = false  // <-- Dismiss the sheet on successful login
+                                        isPresented = false
                                     }
                                 }
                             }
@@ -176,7 +195,10 @@ struct LoginView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                     
                     Button(action: {
-                        
+                        isPresented = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            onSwitchToSignup()
+                        }
                     }) {
                         Text("Create an Account.")
                             .font(.footnote)
@@ -185,10 +207,12 @@ struct LoginView: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                     }
                     
-
                     Spacer()
                 }
             }
+        }
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text("Notice"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
     }
 }
