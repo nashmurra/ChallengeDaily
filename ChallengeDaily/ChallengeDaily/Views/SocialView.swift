@@ -24,7 +24,10 @@ struct SocialView: View {
     @State private var outgoingRequests: [String] = []
     @AppStorage("uid") var userID: String = ""
     @StateObject var userViewModel = UserViewModel()
-
+    @State private var showPrivateProfileAlert = false
+    @State private var privateProfileUsername = ""
+    @State private var selectedUserID = ""
+    
     var filteredProfiles: [UserProfile] {
         searchText.isEmpty ? recommendedFriends :
         recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
@@ -83,6 +86,17 @@ struct SocialView: View {
                 loadFriendRequests()
                 loadOutgoingFriendRequests()
             }
+            .alert("Private Account", isPresented: $showPrivateProfileAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("You can't view \(privateProfileUsername)'s account because it's private. Send a friend request to connect.")
+            }
+            .navigationDestination(isPresented: Binding(
+                get: { !selectedUserID.isEmpty },
+                set: { _ in selectedUserID = "" }
+            )) {
+                UserProfileView(userID: selectedUserID)
+            }
         }
     }
 
@@ -134,7 +148,9 @@ struct SocialView: View {
 
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(friends) { friend in
-                        NavigationLink(destination: UserProfileView(userID: friend.id)) {
+                        Button(action: {
+                            selectedUserID = friend.id
+                        }) {
                             VStack(spacing: 8) {
                                 AsyncImage(url: URL(string: friend.profilePic)) { image in
                                     image.resizable()
@@ -194,7 +210,9 @@ struct SocialView: View {
     }
 
     private func friendRow(for user: UserProfile) -> some View {
-        NavigationLink(destination: UserProfileView(userID: user.id)) {
+        Button(action: {
+            checkProfilePrivacyBeforeNavigation(user: user)
+        }) {
             HStack {
                 AsyncImage(url: URL(string: user.profilePic)) { image in
                     image.resizable()
@@ -239,7 +257,41 @@ struct SocialView: View {
         .buttonStyle(PlainButtonStyle())
     }
 
-    // MARK: - Firebase Functions
+    // MARK: - Privacy Check Function
+    
+    private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
+        // Always allow navigation to your own profile
+        if user.id == userID {
+            selectedUserID = user.id
+            return
+        }
+        
+        // Check if already friends
+        if friends.contains(where: { $0.id == user.id }) {
+            selectedUserID = user.id
+            return
+        }
+        
+        let db = Firestore.firestore()
+        
+        // Check if account is private
+        db.collection("users").document(user.id).getDocument { document, error in
+            if let document = document, document.exists {
+                let isPrivate = document.data()?["isPrivate"] as? Bool ?? false
+                
+                if isPrivate {
+                    // Show alert instead of navigating
+                    privateProfileUsername = user.username
+                    showPrivateProfileAlert = true
+                } else {
+                    // Not private, allow navigation
+                    selectedUserID = user.id
+                }
+            }
+        }
+    }
+
+    // MARK: - Firebase Functions (unchanged)
     
     private func loadFriends() {
         let db = Firestore.firestore()
@@ -355,14 +407,21 @@ struct SocialView: View {
     }
 }
 
+import SwiftUI
+import FirebaseFirestore
+
 struct UserProfileView: View {
     let userID: String
     @Environment(\.presentationMode) var presentationMode
     @State private var profileImage: UIImage?
-    @State private var username: String = ""
-    @State private var email: String = ""
+    @State private var username: String = "Username"
+    @State private var email: String = "user@example.com"
     @State private var friendCount: Int = 0
+    @State private var isPrivateAccount: Bool = false
+    @State private var isFriend: Bool = false
+    @State private var showPrivateAccountAlert: Bool = false
     @StateObject private var postViewModel = PostViewModel()
+    @AppStorage("uid") var currentUserID: String = ""
     
     let columns = [
         GridItem(.flexible(), spacing: 1),
@@ -385,56 +444,68 @@ struct UserProfileView: View {
                 )
                 .ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        headerView
-                        userInfoDetails
-                        
-                        // Posts grid
-                        if !postViewModel.viewModelPosts.isEmpty {
-                            LazyVGrid(columns: columns, spacing: 1) {
-                                ForEach(postViewModel.viewModelPosts) { post in
-                                    NavigationLink {
-                                        PostDetailView(post: post)
-                                    } label: {
-                                        if let uiImage = decodeBase64ToImage(post.image) {
-                                            Image(uiImage: uiImage)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: (UIScreen.main.bounds.width / 3) - 1, height: (UIScreen.main.bounds.width / 3) - 1)
-                                                .clipped()
-                                        } else {
-                                            Rectangle()
-                                                .foregroundColor(.gray)
-                                                .frame(width: (UIScreen.main.bounds.width / 3) - 1, height: (UIScreen.main.bounds.width / 3) - 1)
+                if canViewProfile {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 20) {
+                            headerView
+                            userInfoDetails
+                            
+                            // Posts grid - using the original style
+                            if !postViewModel.viewModelPosts.isEmpty {
+                                LazyVGrid(columns: columns, spacing: 1) {
+                                    ForEach(postViewModel.viewModelPosts) { post in
+                                        NavigationLink {
+                                            PostDetailView(post: post)
+                                                .navigationBarBackButtonHidden(true)
+                                        } label: {
+                                            if let uiImage = decodeBase64ToImage(post.image) {
+                                                Image(uiImage: uiImage)
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: (UIScreen.main.bounds.width / 3) - 1,
+                                                           height: (UIScreen.main.bounds.width / 3) - 1)
+                                                    .clipped()
+                                            } else {
+                                                Rectangle()
+                                                    .foregroundColor(.gray)
+                                                    .frame(width: (UIScreen.main.bounds.width / 3) - 1,
+                                                           height: (UIScreen.main.bounds.width / 3) - 1)
+                                            }
                                         }
                                     }
                                 }
+                                .padding(.top, 8)
+                            } else {
+                                emptyStateView
                             }
-                            .padding(.top, 8)
-                        } else {
-                            emptyStateView
                         }
+                        .padding(.bottom, 20)
                     }
-                    .padding(.bottom)
+                } else {
+                    privateAccountView
                 }
-                .navigationBarBackButtonHidden(true)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        backButton
-                    }
+            }
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    backButton
                 }
+            }
+            .alert("Private Account", isPresented: $showPrivateAccountAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("You can't view \(username)'s account because it's private.")
             }
             .onAppear {
                 fetchUserProfile()
+                checkFriendshipStatus()
                 postViewModel.fetchPostsForUser(userID: userID)
             }
         }
     }
     
-    // MARK: - Subviews
-    
+    // MARK: - Subviews (unchanged from previous implementation)
     private var headerView: some View {
         VStack {
             ZStack {
@@ -460,8 +531,8 @@ struct UserProfileView: View {
                         }
                     )
             }
+            .padding(.top, 20)
         }
-        .frame(maxWidth: .infinity)
     }
     
     private var userInfoDetails: some View {
@@ -469,6 +540,7 @@ struct UserProfileView: View {
             Text(username)
                 .font(.title.bold())
                 .foregroundColor(.white)
+                .padding(.top, 10)
             
             Text("@\(userID.prefix(8))")
                 .font(.subheadline)
@@ -499,18 +571,44 @@ struct UserProfileView: View {
     }
     
     private var emptyStateView: some View {
-        VStack {
+        VStack(spacing: 8) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 40))
+                .foregroundColor(.gray.opacity(0.5))
+                .padding(.bottom, 4)
+            
             Text("No posts yet")
                 .foregroundColor(.white)
                 .font(.headline)
-                .padding(.top, 40)
             
-            Text("This user hasn't posted anything yet!")
+            Text(userID == currentUserID ?
+                 "Complete challenges to share your first post!" :
+                 "This user hasn't posted anything yet!")
                 .foregroundColor(.gray)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
-                .padding(.top, 8)
+        }
+        .padding(.vertical, 40)
+    }
+    
+    private var privateAccountView: some View {
+        VStack {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 50))
+                .foregroundColor(.white)
+                .padding()
+            
+            Text("Private Account")
+                .font(.title)
+                .foregroundColor(.white)
+                .padding(.bottom, 8)
+            
+            Text("This account is private.")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
         }
     }
     
@@ -520,10 +618,31 @@ struct UserProfileView: View {
         }) {
             Image(systemName: "chevron.left")
                 .foregroundColor(.white)
+                .font(.system(size: 18, weight: .semibold))
         }
     }
     
-    // MARK: - Helper Functions
+    // MARK: - Helper Functions (unchanged)
+    private var canViewProfile: Bool {
+        if userID == currentUserID {
+            return true
+        }
+        return !isPrivateAccount || (isPrivateAccount && isFriend)
+    }
+    
+    private func checkFriendshipStatus() {
+        let db = Firestore.firestore()
+        db.collection("users").document(currentUserID).getDocument { document, error in
+            if let document = document, document.exists {
+                let friends = document.data()?["friends"] as? [String] ?? []
+                self.isFriend = friends.contains(userID)
+                
+                if self.isPrivateAccount && !self.isFriend && self.userID != self.currentUserID {
+                    self.showPrivateAccountAlert = true
+                }
+            }
+        }
+    }
     
     private func fetchUserProfile() {
         let db = Firestore.firestore()
@@ -541,9 +660,10 @@ struct UserProfileView: View {
                 }
                 
                 DispatchQueue.main.async {
-                    self.username = data["username"] as? String ?? "Unknown"
+                    self.username = data["username"] as? String ?? "Username"
                     self.email = data["email"] as? String ?? "No email"
                     self.friendCount = (data["friends"] as? [String])?.count ?? 0
+                    self.isPrivateAccount = data["isPrivate"] as? Bool ?? false
                     
                     if let base64String = data["profileImage"] as? String,
                        let imageData = Data(base64Encoded: base64String),
