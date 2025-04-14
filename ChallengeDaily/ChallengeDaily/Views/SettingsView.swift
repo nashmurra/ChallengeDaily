@@ -89,6 +89,8 @@ struct SettingsView: View {
                             }
                         }
                         .listRowBackground(Color.clear)
+                        
+                        
                     }
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)

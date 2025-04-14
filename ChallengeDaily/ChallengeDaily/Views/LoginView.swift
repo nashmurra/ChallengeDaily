@@ -61,7 +61,7 @@ struct LoginView: View {
                                 .font(.footnote)
                                 .fontWeight(.light)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.gray)
+                                .foregroundColor(Color.white)
                                 .padding(.top)
                                 .padding(.leading)
                             
@@ -96,7 +96,7 @@ struct LoginView: View {
                                 .font(.footnote)
                                 .fontWeight(.light)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.gray)
+                                .foregroundColor(Color.white)
                                 .padding(.top)
                                 .padding(.leading)
                             
