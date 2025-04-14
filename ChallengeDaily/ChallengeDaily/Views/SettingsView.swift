@@ -13,7 +13,6 @@ struct SettingsView: View {
     @StateObject var userViewModel = UserViewModel()
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
-    @State private var showAchievements = false
     @State private var showPreferences = false
     @State private var showNotifications = false
     @State private var showPrivacy = false
@@ -42,10 +41,6 @@ struct SettingsView: View {
                         .padding(.top, 60)
                     
                     List {
-                        settingsSection(title: "Features") {
-                            SettingsButton(title: "Achievements", icon: "star.fill") { showAchievements = true }
-                        }
-                        
                         settingsSection(title: "Settings") {
                             SettingsButton(title: "Privacy", icon: "lock.fill") { showPrivacy = true }
                             SettingsButton(title: "Notifications", icon: "bell.fill") { showNotifications = true }
@@ -97,7 +92,6 @@ struct SettingsView: View {
                     .listStyle(InsetGroupedListStyle())
                 }
             }
-            .navigationDestination(isPresented: $showAchievements) { AchievementsView() }
             .navigationDestination(isPresented: $showPreferences) { PreferencesView() }
             .navigationDestination(isPresented: $showPrivacy) { PrivacyView(userID: userID) }
             .navigationDestination(isPresented: $showNotifications) { NotificationsView(userID: userID) }
