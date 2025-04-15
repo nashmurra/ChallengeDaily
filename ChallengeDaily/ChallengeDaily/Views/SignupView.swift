@@ -7,12 +7,15 @@ struct SignupView: View {
     @AppStorage("uid") var userID: String = ""
 
     @State private var email: String = ""
+    @State private var phoneNumber: String = ""
     @State private var password: String = ""
     @State private var username: String = ""
     @State private var confirmPassword: String = ""
 
     @State private var accountCreated = false
     @State private var currentPage = 0
+    
+    @Environment(\.dismiss) private var dismiss
 
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
 
@@ -28,13 +31,20 @@ struct SignupView: View {
         let predicate = NSPredicate(format: "SELF MATCHES %@", regex)
         return predicate.evaluate(with: username)
     }
+    
+    private func isValidPhoneNumber(_ number: String) -> Bool {
+        let cleaned = number.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+        return cleaned.count == 10 // Change this based on country rules if needed
+    }
 
     private var isFormValid: Bool {
         return !email.isEmpty &&
+               isValidPhoneNumber(phoneNumber) &&
                isValidUsername(username) &&
                isValidPassword(password) &&
                confirmPassword == password
     }
+
 
     var body: some View {
         NavigationView {
@@ -104,6 +114,50 @@ struct SignupView: View {
                             }
                             .padding()
                             .tag(0)
+                            
+                            // Phone Number Page
+                            VStack {
+                                Text("Phone Number")
+                                    .font(.footnote)
+                                    .fontWeight(.light)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .foregroundColor(.white)
+                                    .padding(.top)
+                                    .padding(.leading)
+                                    .padding(.horizontal, 20)
+
+                                HStack {
+                                    TextField("Phone Number", text: $phoneNumber)
+                                        .foregroundColor(.white)
+                                        .keyboardType(.phonePad)
+                                        .disableAutocorrection(true)
+
+                                    Spacer()
+
+                                    if !phoneNumber.isEmpty {
+                                        if isValidPhoneNumber(phoneNumber) {
+                                            Image(systemName: "checkmark")
+                                                .fontWeight(.bold)
+                                                .foregroundColor(Color.greenColor)
+                                        } else {
+                                            Image(systemName: "xmark")
+                                                .fontWeight(.bold)
+                                                .foregroundColor(Color.pinkColor)
+                                        }
+                                    }
+
+                                }
+                                .padding(.horizontal, 35)
+                                .padding(.bottom, 1)
+
+                                Divider()
+                                    .background(Color.white)
+                                    .frame(height: 1)
+                                    .padding(.horizontal, 35)
+                            }
+                            .padding()
+                            .tag(1)
+
 
                             // Username Page
                             VStack {
@@ -145,7 +199,7 @@ struct SignupView: View {
                                     .padding(.horizontal, 35)
                             }
                             .padding()
-                            .tag(1)
+                            .tag(2)
 
                             // Password Page
                             VStack {
@@ -187,7 +241,7 @@ struct SignupView: View {
                                     .padding(.horizontal, 35)
                             }
                             .padding()
-                            .tag(2)
+                            .tag(3)
 
                             // Confirm Password Page
                             VStack {
@@ -223,7 +277,7 @@ struct SignupView: View {
                                     .padding(.horizontal, 35)
                             }
                             .padding()
-                            .tag(3)
+                            .tag(4)
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                         .frame(height: 250)
@@ -244,7 +298,7 @@ struct SignupView: View {
                             Spacer()
 
                             Button(action: {
-                                if currentPage < 3 {
+                                if currentPage < 4 {
                                     currentPage += 1
                                 }
                             }) {
@@ -273,6 +327,9 @@ struct SignupView: View {
                                 let newUserID = authResult.user.uid
                                 userID = newUserID
                                 accountCreated = true
+                                
+                                let cleanedPhoneNumber = phoneNumber.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+                                let formattedPhoneNumber = "+1\(cleanedPhoneNumber)" // Replace +1 with dynamic country detection if needed
 
                                 let db = Firestore.firestore()
                                 db.collection("challenges").getDocuments { snapshot, error in
@@ -309,7 +366,8 @@ struct SignupView: View {
                                         "friendRequests": [],
                                         "blockedUsers": [],
                                         "friendCount": 0,
-                                        "pendingFriendRequestsCount": 0
+                                        "pendingFriendRequestsCount": 0,
+                                        "phoneNumber": formattedPhoneNumber
                                     ], merge: true) { error in
                                         if let error = error {
                                             print("Error creating user document: \(error.localizedDescription)")
@@ -322,13 +380,17 @@ struct SignupView: View {
                         } else {
                             if email.isEmpty {
                                 currentPage = 0
-                            } else if !isValidUsername(username) {
+                            } else if phoneNumber.isEmpty || !isValidPhoneNumber(phoneNumber) {
                                 currentPage = 1
-                            } else if !isValidPassword(password) {
+                            } else if !isValidUsername(username) {
                                 currentPage = 2
-                            } else if confirmPassword != password {
+                            } else if !isValidPassword(password) {
                                 currentPage = 3
+                            } else if confirmPassword != password {
+                                currentPage = 4
                             }
+
+
                         }
                     } label: {
                         Text(isFormValid ? "Sign Up" : "Next")
@@ -361,8 +423,23 @@ struct SignupView: View {
 
                     Spacer()
                 }
+                
+                
             }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.white)
+                            .font(.system(size: 20, weight: .bold))
+                    }
+                }
+            }
+
         }
+        
     }
 
     private func getFormattedDate() -> String {
