@@ -32,13 +32,20 @@ struct SignupView: View {
         return predicate.evaluate(with: username)
     }
     
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailFormat = "(?:[a-zA-Z0-9!#$%\\&'*+/=?^_`{|}~-]+(?:\\.[a-zA-Z0-9!#$%\\&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\\.)+[a-zA-Z]{2,}|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:\\.(?!$)|$)){4}\\])"
+        let predicate = NSPredicate(format: "SELF MATCHES %@", emailFormat)
+        return predicate.evaluate(with: email)
+    }
+
+    
     private func isValidPhoneNumber(_ number: String) -> Bool {
         let cleaned = number.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
         return cleaned.count == 10 // Change this based on country rules if needed
     }
 
     private var isFormValid: Bool {
-        return !email.isEmpty &&
+        return isValidEmail(email) &&
                isValidPhoneNumber(phoneNumber) &&
                isValidUsername(username) &&
                isValidPassword(password) &&
@@ -99,10 +106,17 @@ struct SignupView: View {
                                     Spacer()
 
                                     if !email.isEmpty {
-                                        Image(systemName: "checkmark")
-                                            .fontWeight(.bold)
-                                            .foregroundColor(Color.greenColor)
+                                        if isValidEmail(email) {
+                                            Image(systemName: "checkmark")
+                                                .fontWeight(.bold)
+                                                .foregroundColor(Color.greenColor)
+                                        } else {
+                                            Image(systemName: "xmark")
+                                                .fontWeight(.bold)
+                                                .foregroundColor(Color.pinkColor)
+                                        }
                                     }
+
                                 }
                                 .padding(.horizontal, 35)
                                 .padding(.bottom, 1)
@@ -266,6 +280,10 @@ struct SignupView: View {
                                         Image(systemName: "checkmark")
                                             .fontWeight(.bold)
                                             .foregroundColor(Color.greenColor)
+                                    } else if !confirmPassword.isEmpty && confirmPassword != password {
+                                        Image(systemName: "xmark")
+                                            .fontWeight(.bold)
+                                            .foregroundColor(Color.pinkColor)
                                     }
                                 }
                                 .padding(.horizontal, 35)
@@ -282,34 +300,8 @@ struct SignupView: View {
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
                         .frame(height: 250)
                         .animation(.easeInOut, value: currentPage)
+                        .gesture(DragGesture()) // This blocks swiping
 
-                        HStack {
-                            Button(action: {
-                                if currentPage > 0 {
-                                    currentPage -= 1
-                                }
-                            }) {
-                                Image(systemName: "chevron.left")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                                    .padding()
-                            }
-
-                            Spacer()
-
-                            Button(action: {
-                                if currentPage < 4 {
-                                    currentPage += 1
-                                }
-                            }) {
-                                Image(systemName: "chevron.right")
-                                    .font(.title2)
-                                    .foregroundColor(.white)
-                                    .padding()
-                            }
-                        }
-                        .padding(.horizontal, 40)
-                        .frame(height: 250, alignment: .bottom)
                     }
 
                     Spacer().frame(height: 40)
@@ -378,7 +370,7 @@ struct SignupView: View {
                                 }
                             }
                         } else {
-                            if email.isEmpty {
+                            if email.isEmpty || !isValidEmail(email) {
                                 currentPage = 0
                             } else if phoneNumber.isEmpty || !isValidPhoneNumber(phoneNumber) {
                                 currentPage = 1
