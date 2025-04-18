@@ -15,10 +15,7 @@ struct NotificationsView: View {
     @State private var notifications: [String: Bool] = [
         "Friend Requests": false,
         "Friends' Posts": false,
-        "Comments": false,
-        "Likes": false,
         "Streak Warnings": false,
-        "Achievements": false
     ]
     
     var body: some View {

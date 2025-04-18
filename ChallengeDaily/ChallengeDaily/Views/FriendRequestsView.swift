@@ -90,6 +90,7 @@ struct FriendRequestsView: View {
             }
             .onAppear {
                 loadFriendRequests()
+                listenForAcceptedFriendRequests()
             }
         }
     }
@@ -180,7 +181,11 @@ struct FriendRequestsView: View {
             .getDocuments { snapshot, _ in
                 snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
                 receivedRequests.removeAll { $0.id == user.id }
-                sendAcceptedRequestNotification(for: user)
+
+                // Signal the sender for local notification
+                senderRef.updateData([
+                    "pendingFriendRequestAccepted": FieldValue.arrayUnion([userID])
+                ])
             }
     }
 
@@ -244,5 +249,27 @@ struct FriendRequestsView: View {
         let request = UNNotificationRequest(identifier: "accepted_\(user.id)", content: content, trigger: trigger)
 
         UNUserNotificationCenter.current().add(request)
+    }
+
+    private func listenForAcceptedFriendRequests() {
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userID)
+
+        userRef.addSnapshotListener { snapshot, error in
+            guard let data = snapshot?.data() else { return }
+
+            if let acceptedIDs = data["pendingFriendRequestAccepted"] as? [String] {
+                for id in acceptedIDs {
+                    fetchUserProfiles(userIDs: [id]) { users in
+                        if let user = users.first {
+                            sendAcceptedRequestNotification(for: user)
+                        }
+                    }
+                }
+
+                // Clear the accepted list after showing the notification
+                userRef.updateData(["pendingFriendRequestAccepted": []])
+            }
+        }
     }
 }
