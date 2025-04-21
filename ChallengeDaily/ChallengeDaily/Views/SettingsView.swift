@@ -14,7 +14,6 @@ struct SettingsView: View {
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
     @State private var showPreferences = false
-    @State private var showNotifications = false
     @State private var showPrivacy = false
     @State private var showAbout = false
 
@@ -43,7 +42,6 @@ struct SettingsView: View {
                     List {
                         settingsSection(title: "Settings") {
                             SettingsButton(title: "Privacy", icon: "lock.fill") { showPrivacy = true }
-                            SettingsButton(title: "Notifications", icon: "bell.fill") { showNotifications = true }
                         }
                         
                         settingsSection(title: "About") {
@@ -94,7 +92,6 @@ struct SettingsView: View {
             }
             .navigationDestination(isPresented: $showPreferences) { PreferencesView() }
             .navigationDestination(isPresented: $showPrivacy) { PrivacyView(userID: userID) }
-            .navigationDestination(isPresented: $showNotifications) { NotificationsView(userID: userID) }
             .navigationDestination(isPresented: $showAbout) { AboutView() }
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)
