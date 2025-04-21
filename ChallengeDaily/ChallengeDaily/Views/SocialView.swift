@@ -8,6 +8,7 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import UserNotifications
 
 struct UserProfile: Identifiable {
     var id: String
@@ -27,7 +28,7 @@ struct SocialView: View {
     @State private var showPrivateProfileAlert = false
     @State private var privateProfileUsername = ""
     @State private var selectedUserID = ""
-    
+
     var filteredProfiles: [UserProfile] {
         searchText.isEmpty ? recommendedFriends :
         recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
@@ -101,7 +102,7 @@ struct SocialView: View {
     }
 
     // MARK: - Subviews
-    
+
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
@@ -131,7 +132,6 @@ struct SocialView: View {
                 .font(.title)
                 .foregroundColor(.white)
                 .fontWeight(.bold)
-                .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10)
 
@@ -186,7 +186,6 @@ struct SocialView: View {
             .font(.title)
             .foregroundColor(.white)
             .fontWeight(.bold)
-            .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .padding(.top, 10)
     }
@@ -257,68 +256,51 @@ struct SocialView: View {
         .buttonStyle(PlainButtonStyle())
     }
 
-    // MARK: - Privacy Check Function
-    
+    // MARK: - Firebase Helpers
+
     private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
-        // Always allow navigation to your own profile
-        if user.id == userID {
+        if user.id == userID || friends.contains(where: { $0.id == user.id }) {
             selectedUserID = user.id
             return
         }
-        
-        // Check if already friends
-        if friends.contains(where: { $0.id == user.id }) {
-            selectedUserID = user.id
-            return
-        }
-        
-        let db = Firestore.firestore()
-        
-        // Check if account is private
-        db.collection("users").document(user.id).getDocument { document, error in
+
+        Firestore.firestore().collection("users").document(user.id).getDocument { document, _ in
             if let document = document, document.exists {
                 let isPrivate = document.data()?["isPrivate"] as? Bool ?? false
-                
                 if isPrivate {
-                    // Show alert instead of navigating
                     privateProfileUsername = user.username
                     showPrivateProfileAlert = true
                 } else {
-                    // Not private, allow navigation
                     selectedUserID = user.id
                 }
             }
         }
     }
 
-    // MARK: - Firebase Functions (unchanged)
-    
     private func loadFriends() {
         let db = Firestore.firestore()
-        db.collection("users").document(userID).getDocument { document, error in
+        db.collection("users").document(userID).getDocument { document, _ in
             if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
-                fetchUserProfiles(userIDs: friendIDs) { users in
-                    self.friends = users.sorted { $0.username.lowercased() < $1.username.lowercased() }
-                }
+                fetchUserProfiles(userIDs: friendIDs) { self.friends = $0 }
             }
         }
     }
 
     private func loadRecommendedFriends() {
         let db = Firestore.firestore()
-        db.collection("users").getDocuments { snapshot, error in
+        db.collection("users").getDocuments { snapshot, _ in
             if let documents = snapshot?.documents {
                 let users = documents.compactMap { doc -> UserProfile? in
-                    let data = doc.data()
                     let id = doc.documentID
                     guard id != self.userID else { return nil }
+                    let data = doc.data()
                     return UserProfile(
                         id: id,
                         username: data["username"] as? String ?? "",
                         profilePic: data["profilePic"] as? String ?? ""
                     )
                 }
-                self.recommendedFriends = users.sorted { $0.username.lowercased() < $1.username.lowercased() }
+                self.recommendedFriends = users
             }
         }
     }
@@ -328,12 +310,10 @@ struct SocialView: View {
         db.collection("friendRequests")
             .whereField("receiverId", isEqualTo: userID)
             .whereField("status", isEqualTo: "pending")
-            .getDocuments { snapshot, error in
+            .getDocuments { snapshot, _ in
                 if let documents = snapshot?.documents {
                     let senderIDs = documents.compactMap { $0.data()["senderId"] as? String }
-                    fetchUserProfiles(userIDs: senderIDs) { users in
-                        self.friendRequests = users
-                    }
+                    fetchUserProfiles(userIDs: senderIDs) { self.friendRequests = $0 }
                 }
             }
     }
@@ -343,25 +323,45 @@ struct SocialView: View {
         db.collection("friendRequests")
             .whereField("senderId", isEqualTo: userID)
             .whereField("status", isEqualTo: "pending")
-            .getDocuments { snapshot, error in
+            .getDocuments { snapshot, _ in
                 if let documents = snapshot?.documents {
-                    let receiverIDs = documents.compactMap { $0.data()["receiverId"] as? String }
-                    self.outgoingRequests = receiverIDs
+                    self.outgoingRequests = documents.compactMap { $0.data()["receiverId"] as? String }
                 }
             }
     }
 
+    private func fetchUserProfiles(userIDs: [String], completion: @escaping ([UserProfile]) -> Void) {
+        let db = Firestore.firestore()
+        var profiles: [UserProfile] = []
+        let group = DispatchGroup()
+
+        for id in userIDs {
+            group.enter()
+            db.collection("users").document(id).getDocument { document, _ in
+                if let document = document, let data = document.data() {
+                    profiles.append(UserProfile(
+                        id: id,
+                        username: data["username"] as? String ?? "",
+                        profilePic: data["profilePic"] as? String ?? ""
+                    ))
+                }
+                group.leave()
+            }
+        }
+
+        group.notify(queue: .main) {
+            completion(profiles.sorted { $0.username < $1.username })
+        }
+    }
+
     private func sendFriendRequest(to user: UserProfile) {
         let db = Firestore.firestore()
-
         db.collection("friendRequests")
             .whereField("senderId", isEqualTo: userID)
             .whereField("receiverId", isEqualTo: user.id)
             .whereField("status", isEqualTo: "pending")
-            .getDocuments { snapshot, error in
-                guard let snapshot = snapshot, snapshot.isEmpty else {
-                    return
-                }
+            .getDocuments { snapshot, _ in
+                guard let snapshot = snapshot, snapshot.isEmpty else { return }
 
                 let requestData: [String: Any] = [
                     "senderId": userID,
@@ -376,36 +376,34 @@ struct SocialView: View {
                     if error == nil {
                         friendRequests.append(user)
                         outgoingRequests.append(user.id)
+
+                        db.collection("users").document(user.id).getDocument { doc, _ in
+                            if let doc = doc, let settings = doc.data()?["notifications"] as? [String: Bool],
+                               settings["Friend Requests"] == true {
+                                sendLocalNotification(title: "New Friend Request", body: "\(userViewModel.username) sent you a request.")
+                            }
+                        }
                     }
                 }
             }
     }
 
-    private func fetchUserProfiles(userIDs: [String], completion: @escaping ([UserProfile]) -> Void) {
-        let db = Firestore.firestore()
-        var profiles: [UserProfile] = []
-        let group = DispatchGroup()
+    private func sendLocalNotification(title: String, body: String) {
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
 
-        for id in userIDs {
-            group.enter()
-            db.collection("users").document(id).getDocument { document, error in
-                if let document = document, let data = document.data() {
-                    let profile = UserProfile(
-                        id: id,
-                        username: data["username"] as? String ?? "",
-                        profilePic: data["profilePic"] as? String ?? ""
-                    )
-                    profiles.append(profile)
-                }
-                group.leave()
-            }
-        }
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
 
-        group.notify(queue: .main) {
-            completion(profiles)
-        }
+        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
     }
 }
+
 
 import SwiftUI
 import FirebaseFirestore

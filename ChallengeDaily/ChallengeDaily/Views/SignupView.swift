@@ -349,10 +349,7 @@ struct SignupView: View {
                                         "notifications": [
                                             "Friend Requests": false,
                                             "Friends' Posts": false,
-                                            "Comments": false,
-                                            "Likes": false,
                                             "Streak Warnings": false,
-                                            "Achievements": false
                                         ],
                                         "friends": [],
                                         "friendRequests": [],
