@@ -69,7 +69,14 @@ struct StartView: View {
 
                 Spacer().frame(height: 50)
 
-                Text("Everyone’s watching. You in?")
+                Text("Everyone’s watching.")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.white)
+                    .offset(y:55)
+                    .multilineTextAlignment(.center)
+                
+                Text("You in?")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(Color.white)
