@@ -47,6 +47,8 @@ class PostViewModel: ObservableObject {
                 }
             }
     }
+    
+    
 
     func fetchPostsForUser(userID: String) {
         let db = Firestore.firestore()

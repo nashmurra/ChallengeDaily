@@ -29,6 +29,7 @@ struct SocialView: View {
     @State private var privateProfileUsername = ""
     @State private var selectedUserID = ""
     @State private var friendListener: ListenerRegistration?
+    @State private var requestListener: ListenerRegistration?
     @State private var showRemoveFriendAlert = false
     @State private var friendToRemove: UserProfile?
     
@@ -64,18 +65,6 @@ struct SocialView: View {
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
-                            Text("")
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: FriendRequestsView()) {
                         Image(systemName: "bell.fill")
@@ -86,12 +75,14 @@ struct SocialView: View {
             }
             .onAppear {
                 setupFriendListener()
+                setupFriendRequestListener()
                 loadRecommendedFriends()
                 loadFriendRequests()
                 loadOutgoingFriendRequests()
             }
             .onDisappear {
                 friendListener?.remove()
+                requestListener?.remove()
             }
             .alert("Private Account", isPresented: $showPrivateProfileAlert) {
                 Button("OK", role: .cancel) { }
@@ -299,6 +290,22 @@ struct SocialView: View {
         }
     }
     
+    private func setupFriendRequestListener() {
+        let db = Firestore.firestore()
+        requestListener = db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .addSnapshotListener { snapshot, _ in
+                guard let snapshot = snapshot else { return }
+                
+                snapshot.documentChanges.forEach { change in
+                    if change.type == .removed {
+                        let receiverId = change.document.data()["receiverId"] as? String ?? ""
+                        handleCanceledRequest(userID: receiverId)
+                    }
+                }
+            }
+    }
+    
     private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
         if user.id == userID || friends.contains(where: { $0.id == user.id }) {
             selectedUserID = user.id
@@ -332,7 +339,8 @@ struct SocialView: View {
                         profilePic: data["profilePic"] as? String ?? ""
                     )
                 }
-                self.recommendedFriends = users
+                let excludedIDs = Set(friends.map { $0.id } + friendRequests.map { $0.id } + outgoingRequests)
+                self.recommendedFriends = users.filter { !excludedIDs.contains($0.id) }
             }
         }
     }
@@ -406,12 +414,14 @@ struct SocialView: View {
                 
                 db.collection("friendRequests").addDocument(data: requestData) { error in
                     if error == nil {
-                        friendRequests.append(user)
                         outgoingRequests.append(user.id)
+                        recommendedFriends.removeAll { $0.id == user.id }
                         
                         db.collection("users").document(user.id).getDocument { doc, _ in
-                            if let doc = doc, let settings = doc.data()?["notifications"] as? [String: Bool],
+                            if let doc = doc,
+                               let settings = doc.data()?["notifications"] as? [String: Bool],
                                settings["Friend Requests"] == true {
+                                // Handle notification
                             }
                         }
                     }
@@ -438,13 +448,39 @@ struct SocialView: View {
         batch.commit { error in
             if let error = error {
                 print("Error removing friend: \(error.localizedDescription)")
+            } else {
+                friends.removeAll { $0.id == friendID }
+                
+                // Re-add to recommended friends if appropriate
+                fetchUserProfiles(userIDs: [friendID]) { profiles in
+                    if let profile = profiles.first {
+                        if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                           !friendRequests.contains(where: { $0.id == profile.id }) &&
+                           !outgoingRequests.contains(profile.id) {
+                            recommendedFriends.append(profile)
+                            recommendedFriends.sort { $0.username < $1.username }
+                        }
+                    }
+                }
             }
-            // The listener will automatically update the UI
+        }
+    }
+    
+    private func handleCanceledRequest(userID: String) {
+        outgoingRequests.removeAll { $0 == userID }
+        
+        fetchUserProfiles(userIDs: [userID]) { profiles in
+            if let profile = profiles.first {
+                if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                   !friends.contains(where: { $0.id == profile.id }) {
+                    recommendedFriends.append(profile)
+                    recommendedFriends.sort { $0.username < $1.username }
+                }
+            }
         }
     }
 }
     
-
 
 import SwiftUI
 import FirebaseFirestore
@@ -489,7 +525,6 @@ struct UserProfileView: View {
                             headerView
                             userInfoDetails
                             
-                            // Posts grid - using the original style
                             if !postViewModel.viewModelPosts.isEmpty {
                                 LazyVGrid(columns: columns, spacing: 1) {
                                     ForEach(postViewModel.viewModelPosts) { post in
