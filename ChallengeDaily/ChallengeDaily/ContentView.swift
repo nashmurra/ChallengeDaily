@@ -25,7 +25,7 @@ struct ContentView: View {
 
         NavigationStack {
             if userID == "" {
-                AuthView()
+                StartView().preferredColorScheme(.dark)
             } else {
 
                 ZStack {

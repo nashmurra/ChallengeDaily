@@ -498,7 +498,7 @@ struct UserProfileView: View {
             .onAppear {
                 fetchUserProfile()
                 checkFriendshipStatus()
-                postViewModel.fetchPostsForUser(userID: userID)
+                postViewModel.fetchPostsByUserID(for: userID)
             }
         }
     }
