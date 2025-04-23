@@ -68,8 +68,10 @@ struct SettingsView: View {
                                 let firebaseAuth = Auth.auth()
                                 do {
                                     try firebaseAuth.signOut()
-                                    withAnimation {
-                                        userID = ""
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                        withAnimation {
+                                            userID = ""
+                                        }
                                     }
                                 } catch let signOutError as NSError {
                                     print("Error signing out: %@", signOutError)
@@ -80,6 +82,7 @@ struct SettingsView: View {
                                     .fontWeight(.bold)
                                     .frame(maxWidth: .infinity, alignment: .center)
                             }
+
                         }
                         .listRowBackground(Color.clear)
                         

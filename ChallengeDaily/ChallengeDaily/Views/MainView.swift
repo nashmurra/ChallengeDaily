@@ -111,11 +111,10 @@ struct MainView: View {
 
                     // Post Button
                     Button(action: {
-                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                            // showCamera = true
-                        } else {
-                            print("Camera not available")
-                        }
+                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                                print("❌ Camera not available.")
+                                return
+                            }
                     }) {
                         Text("Make a Post")
                             .foregroundColor(.black)
@@ -142,13 +141,16 @@ struct MainView: View {
                 CameraView(selectedImage: $selectedImage)
                     //.preferredColorScheme(.dark)
                     .onDisappear {
-                        print("📸 selectedImage after camera: \(String(describing: selectedImage))")
-                        if selectedImage != nil {
-                            DispatchQueue.main.async {
-                                navigateToPostView = true
-                            }
+                        guard let _ = selectedImage else {
+                            print("❌ No image was selected.")
+                            return
+                        }
+                        
+                        DispatchQueue.main.async {
+                            navigateToPostView = true
                         }
                     }
+
             }
             .navigationDestination(isPresented: $navigateToPostView) {
                 if let image = selectedImage {
@@ -176,56 +178,59 @@ struct MainView: View {
     
     func setCurrentChallenge() {
         userViewModel.fetchUserChallengeID { challengeID in
-            if let challengeID = challengeID {
-                print("User's current challenge ID: \(challengeID)")
+            guard let challengeID = challengeID else {
+                print("❌ No current challenge ID.")
+                return
+            }
 
-                currentChallengeViewmodel.fetchChallengeByID(challengeID) { challenge in
-                    if let challenge = challenge {
-                        DispatchQueue.main.async {
-                            self.currentChallenge = challenge
-                        }
-                        print("Fetched challenge: \(challenge.title)")
-                    } else {
-                        print("Challenge not found")
-                    }
+            print("User's current challenge ID: \(challengeID)")
+
+            currentChallengeViewmodel.fetchChallengeByID(challengeID) { challenge in
+                guard let challenge = challenge else {
+                    print("❌ Challenge with ID \(challengeID) not found.")
+                    return
                 }
-            } else {
-                print("User has no current challenge ID assigned.")
+
+                DispatchQueue.main.async {
+                    self.currentChallenge = challenge
+                }
+                print("✅ Fetched challenge: \(challenge.title)")
             }
         }
     }
-
-
-
 
     func updateCountdown() {
         let now = Date()
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: now)
-
+        
         components.hour = 3
         components.minute = 0
         components.second = 0
 
         let timezone = TimeZone(identifier: "America/New_York") ?? TimeZone.current
         let offset = timezone.secondsFromGMT()
-        let utcResetDate = calendar.date(from: components)?.addingTimeInterval(TimeInterval(-offset))
 
-        // If the reset time has already passed today, calculate for the next day
-        if let resetTime = utcResetDate, resetTime < now {
+        guard let todayReset = calendar.date(from: components) else {
+            print("❌ Failed to calculate reset time from components.")
+            return
+        }
+
+        var utcResetDate = todayReset.addingTimeInterval(TimeInterval(-offset))
+
+        if utcResetDate < now {
             components.day! += 1
-        }
-
-        if let nextReset = calendar.date(from: components) {
-            let timeDifference = nextReset.timeIntervalSince(now)
-            timeRemaining = max(0, Int(timeDifference)) // Ensure no negative value
-
-            // Trigger the reset if the time remaining is 0 (i.e., reset time has passed)
-            if timeRemaining == 0 {
-                //onCountdownReset()
+            guard let nextDayReset = calendar.date(from: components) else {
+                print("❌ Failed to calculate next day reset.")
+                return
             }
+            utcResetDate = nextDayReset.addingTimeInterval(TimeInterval(-offset))
         }
+
+        let timeDifference = utcResetDate.timeIntervalSince(now)
+        timeRemaining = max(0, Int(timeDifference))
     }
+
 
 
 

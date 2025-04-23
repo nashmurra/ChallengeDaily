@@ -50,7 +50,7 @@ class PostViewModel: ObservableObject {
     
     
 
-    func fetchPostsForUser(userID: String) {
+    func fetchPostsByUserID(for userID: String) {
         let db = Firestore.firestore()
         db.collection("feed")
             .whereField("userID", isEqualTo: userID)
@@ -91,4 +91,5 @@ class PostViewModel: ObservableObject {
                 }
             }
     }
+
 }
