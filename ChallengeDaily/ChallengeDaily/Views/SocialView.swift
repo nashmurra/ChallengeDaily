@@ -28,12 +28,16 @@ struct SocialView: View {
     @State private var showPrivateProfileAlert = false
     @State private var privateProfileUsername = ""
     @State private var selectedUserID = ""
-
+    @State private var friendListener: ListenerRegistration?
+    @State private var requestListener: ListenerRegistration?
+    @State private var showRemoveFriendAlert = false
+    @State private var friendToRemove: UserProfile?
+    
     var filteredProfiles: [UserProfile] {
         searchText.isEmpty ? recommendedFriends :
         recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
     }
-
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -41,12 +45,12 @@ struct SocialView: View {
                     .resizable()
                     .scaledToFill()
                     .ignoresSafeArea()
-
+                
                 ScrollView {
                     VStack(spacing: 20) {
                         Spacer().frame(height: 20)
                         searchBar
-
+                        
                         if searchText.isEmpty {
                             friendsSection
                             recommendedTitle
@@ -61,18 +65,6 @@ struct SocialView: View {
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
-                            Text("")
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     NavigationLink(destination: FriendRequestsView()) {
                         Image(systemName: "bell.fill")
@@ -82,15 +74,32 @@ struct SocialView: View {
                 }
             }
             .onAppear {
-                loadFriends()
+                setupFriendListener()
+                setupFriendRequestListener()
                 loadRecommendedFriends()
                 loadFriendRequests()
                 loadOutgoingFriendRequests()
+            }
+            .onDisappear {
+                friendListener?.remove()
+                requestListener?.remove()
             }
             .alert("Private Account", isPresented: $showPrivateProfileAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text("You can't view \(privateProfileUsername)'s account because it's private. Send a friend request to connect.")
+            }
+            .alert("Remove Friend", isPresented: $showRemoveFriendAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Remove", role: .destructive) {
+                    if let friend = friendToRemove {
+                        removeFriend(friendID: friend.id)
+                    }
+                }
+            } message: {
+                if let friend = friendToRemove {
+                    Text("Are you sure you want to remove \(friend.username) from your friends?")
+                }
             }
             .navigationDestination(isPresented: Binding(
                 get: { !selectedUserID.isEmpty },
@@ -100,19 +109,19 @@ struct SocialView: View {
             }
         }
     }
-
+    
     // MARK: - Subviews
-
+    
     private var searchBar: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.gray)
-
+            
             TextField("Search...", text: $searchText)
                 .foregroundColor(.white)
                 .autocorrectionDisabled(true)
                 .textInputAutocapitalization(.never)
-
+            
             if !searchText.isEmpty {
                 Button(action: { searchText = "" }) {
                     Image(systemName: "xmark.circle.fill")
@@ -125,7 +134,7 @@ struct SocialView: View {
         .cornerRadius(8)
         .padding(.horizontal)
     }
-
+    
     private var friendsSection: some View {
         VStack {
             Text("Your Friends")
@@ -134,7 +143,7 @@ struct SocialView: View {
                 .fontWeight(.bold)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 10)
-
+            
             if friends.isEmpty {
                 Text("You have no friends yet.")
                     .foregroundColor(.white.opacity(0.6))
@@ -145,42 +154,56 @@ struct SocialView: View {
                     GridItem(.flexible(), spacing: 20),
                     GridItem(.flexible(), spacing: 20)
                 ]
-
+                
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(friends) { friend in
-                        Button(action: {
-                            selectedUserID = friend.id
-                        }) {
-                            VStack(spacing: 8) {
-                                AsyncImage(url: URL(string: friend.profilePic)) { image in
-                                    image.resizable()
-                                } placeholder: {
-                                    Image(systemName: "person.circle.fill")
-                                        .resizable()
+                        VStack(spacing: 8) {
+                            Button(action: {
+                                selectedUserID = friend.id
+                            }) {
+                                VStack(spacing: 8) {
+                                    AsyncImage(url: URL(string: friend.profilePic)) { image in
+                                        image.resizable()
+                                    } placeholder: {
+                                        Image(systemName: "person.circle.fill")
+                                            .resizable()
+                                    }
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 60, height: 60)
+                                    .clipShape(Circle())
+                                    
+                                    Text(friend.username)
+                                        .font(.caption)
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
                                 }
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 60, height: 60)
-                                .clipShape(Circle())
-
-                                Text(friend.username)
-                                    .font(.caption)
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
+                                .frame(width: 95, height: 100)
+                                .padding()
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(10)
                             }
-                            .frame(width: 95, height: 100)
-                            .padding()
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(10)
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                friendToRemove = friend
+                                showRemoveFriendAlert = true
+                            }) {
+                                Text("Remove")
+                                    .font(.caption2)
+                                    .foregroundColor(.red)
+                                    .padding(5)
+                                    .background(Color.red.opacity(0.2))
+                                    .cornerRadius(5)
+                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal)
             }
         }
     }
-
+    
     private var recommendedTitle: some View {
         Text("Recommended Friends")
             .font(.title)
@@ -189,7 +212,7 @@ struct SocialView: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 10)
     }
-
+    
     private var friendsList: some View {
         VStack(spacing: 10) {
             ForEach(filteredProfiles) { profile in
@@ -198,7 +221,7 @@ struct SocialView: View {
         }
         .padding(.horizontal)
     }
-
+    
     private var searchResults: some View {
         VStack(spacing: 10) {
             ForEach(filteredProfiles) { profile in
@@ -207,7 +230,7 @@ struct SocialView: View {
         }
         .padding(.horizontal)
     }
-
+    
     private func friendRow(for user: UserProfile) -> some View {
         Button(action: {
             checkProfilePrivacyBeforeNavigation(user: user)
@@ -220,14 +243,14 @@ struct SocialView: View {
                 }
                 .frame(width: 40, height: 40)
                 .clipShape(Circle())
-
+                
                 Text(user.username)
                     .foregroundColor(.white)
                     .font(.system(size: 18, weight: .medium))
                     .padding(.leading, 10)
-
+                
                 Spacer()
-
+                
                 if friends.contains(where: { $0.id == user.id }) {
                     Image(systemName: "checkmark.circle.fill")
                         .resizable()
@@ -255,15 +278,40 @@ struct SocialView: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-
+    
     // MARK: - Firebase Helpers
-
+    
+    private func setupFriendListener() {
+        let db = Firestore.firestore()
+        friendListener = db.collection("users").document(userID).addSnapshotListener { document, _ in
+            if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
+                fetchUserProfiles(userIDs: friendIDs) { self.friends = $0 }
+            }
+        }
+    }
+    
+    private func setupFriendRequestListener() {
+        let db = Firestore.firestore()
+        requestListener = db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .addSnapshotListener { snapshot, _ in
+                guard let snapshot = snapshot else { return }
+                
+                snapshot.documentChanges.forEach { change in
+                    if change.type == .removed {
+                        let receiverId = change.document.data()["receiverId"] as? String ?? ""
+                        handleCanceledRequest(userID: receiverId)
+                    }
+                }
+            }
+    }
+    
     private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
         if user.id == userID || friends.contains(where: { $0.id == user.id }) {
             selectedUserID = user.id
             return
         }
-
+        
         Firestore.firestore().collection("users").document(user.id).getDocument { document, _ in
             if let document = document, document.exists {
                 let isPrivate = document.data()?["isPrivate"] as? Bool ?? false
@@ -276,16 +324,7 @@ struct SocialView: View {
             }
         }
     }
-
-    private func loadFriends() {
-        let db = Firestore.firestore()
-        db.collection("users").document(userID).getDocument { document, _ in
-            if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
-                fetchUserProfiles(userIDs: friendIDs) { self.friends = $0 }
-            }
-        }
-    }
-
+    
     private func loadRecommendedFriends() {
         let db = Firestore.firestore()
         db.collection("users").getDocuments { snapshot, _ in
@@ -300,11 +339,12 @@ struct SocialView: View {
                         profilePic: data["profilePic"] as? String ?? ""
                     )
                 }
-                self.recommendedFriends = users
+                let excludedIDs = Set(friends.map { $0.id } + friendRequests.map { $0.id } + outgoingRequests)
+                self.recommendedFriends = users.filter { !excludedIDs.contains($0.id) }
             }
         }
     }
-
+    
     private func loadFriendRequests() {
         let db = Firestore.firestore()
         db.collection("friendRequests")
@@ -317,7 +357,7 @@ struct SocialView: View {
                 }
             }
     }
-
+    
     private func loadOutgoingFriendRequests() {
         let db = Firestore.firestore()
         db.collection("friendRequests")
@@ -329,12 +369,12 @@ struct SocialView: View {
                 }
             }
     }
-
+    
     private func fetchUserProfiles(userIDs: [String], completion: @escaping ([UserProfile]) -> Void) {
         let db = Firestore.firestore()
         var profiles: [UserProfile] = []
         let group = DispatchGroup()
-
+        
         for id in userIDs {
             group.enter()
             db.collection("users").document(id).getDocument { document, _ in
@@ -348,12 +388,12 @@ struct SocialView: View {
                 group.leave()
             }
         }
-
+        
         group.notify(queue: .main) {
             completion(profiles.sorted { $0.username < $1.username })
         }
     }
-
+    
     private func sendFriendRequest(to user: UserProfile) {
         let db = Firestore.firestore()
         db.collection("friendRequests")
@@ -362,7 +402,7 @@ struct SocialView: View {
             .whereField("status", isEqualTo: "pending")
             .getDocuments { snapshot, _ in
                 guard let snapshot = snapshot, snapshot.isEmpty else { return }
-
+                
                 let requestData: [String: Any] = [
                     "senderId": userID,
                     "senderName": userViewModel.username,
@@ -371,39 +411,76 @@ struct SocialView: View {
                     "status": "pending",
                     "timestamp": Timestamp(date: Date())
                 ]
-
+                
                 db.collection("friendRequests").addDocument(data: requestData) { error in
                     if error == nil {
-                        friendRequests.append(user)
                         outgoingRequests.append(user.id)
-
+                        recommendedFriends.removeAll { $0.id == user.id }
+                        
                         db.collection("users").document(user.id).getDocument { doc, _ in
-                            if let doc = doc, let settings = doc.data()?["notifications"] as? [String: Bool],
+                            if let doc = doc,
+                               let settings = doc.data()?["notifications"] as? [String: Bool],
                                settings["Friend Requests"] == true {
-                                sendLocalNotification(title: "New Friend Request", body: "\(userViewModel.username) sent you a request.")
+                                // Handle notification
                             }
                         }
                     }
                 }
             }
     }
-
-    private func sendLocalNotification(title: String, body: String) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        content.sound = .default
-
-        let request = UNNotificationRequest(
-            identifier: UUID().uuidString,
-            content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        )
-
-        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    
+    private func removeFriend(friendID: String) {
+        let db = Firestore.firestore()
+        let batch = db.batch()
+        
+        // Remove from current user's friends list
+        let currentUserRef = db.collection("users").document(userID)
+        batch.updateData([
+            "friends": FieldValue.arrayRemove([friendID])
+        ], forDocument: currentUserRef)
+        
+        // Remove from friend's friends list
+        let friendRef = db.collection("users").document(friendID)
+        batch.updateData([
+            "friends": FieldValue.arrayRemove([userID])
+        ], forDocument: friendRef)
+        
+        batch.commit { error in
+            if let error = error {
+                print("Error removing friend: \(error.localizedDescription)")
+            } else {
+                friends.removeAll { $0.id == friendID }
+                
+                // Re-add to recommended friends if appropriate
+                fetchUserProfiles(userIDs: [friendID]) { profiles in
+                    if let profile = profiles.first {
+                        if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                           !friendRequests.contains(where: { $0.id == profile.id }) &&
+                           !outgoingRequests.contains(profile.id) {
+                            recommendedFriends.append(profile)
+                            recommendedFriends.sort { $0.username < $1.username }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func handleCanceledRequest(userID: String) {
+        outgoingRequests.removeAll { $0 == userID }
+        
+        fetchUserProfiles(userIDs: [userID]) { profiles in
+            if let profile = profiles.first {
+                if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                   !friends.contains(where: { $0.id == profile.id }) {
+                    recommendedFriends.append(profile)
+                    recommendedFriends.sort { $0.username < $1.username }
+                }
+            }
+        }
     }
 }
-
+    
 
 import SwiftUI
 import FirebaseFirestore
@@ -448,7 +525,6 @@ struct UserProfileView: View {
                             headerView
                             userInfoDetails
                             
-                            // Posts grid - using the original style
                             if !postViewModel.viewModelPosts.isEmpty {
                                 LazyVGrid(columns: columns, spacing: 1) {
                                     ForEach(postViewModel.viewModelPosts) { post in

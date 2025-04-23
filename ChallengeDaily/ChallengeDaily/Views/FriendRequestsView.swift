@@ -15,6 +15,7 @@ struct FriendRequestsView: View {
     @AppStorage("uid") var userID: String = ""
     @State private var receivedRequests: [UserProfile] = []
     @State private var sentRequests: [UserProfile] = []
+    @State private var listener: ListenerRegistration?
 
     var body: some View {
         NavigationStack {
@@ -34,26 +35,6 @@ struct FriendRequestsView: View {
                             .multilineTextAlignment(.center)
 
                         VStack(spacing: 15) {
-                            Text("Sent")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-
-                            if sentRequests.isEmpty {
-                                Text("No sent requests.")
-                                    .foregroundColor(.white.opacity(0.6))
-                            } else {
-                                ForEach(sentRequests) { user in
-                                    requestRow(for: user, isReceived: false)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.horizontal)
-
-                        Divider().background(Color.white.opacity(0.3)).padding(.horizontal)
-
-                        VStack(spacing: 15) {
                             Text("Received")
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -70,10 +51,31 @@ struct FriendRequestsView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.horizontal)
+
+                        Divider().background(Color.white.opacity(0.3)).padding(.horizontal)
+
+                        VStack(spacing: 15) {
+                            Text("Sent")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+
+                            if sentRequests.isEmpty {
+                                Text("No sent requests.")
+                                    .foregroundColor(.white.opacity(0.6))
+                            } else {
+                                ForEach(sentRequests) { user in
+                                    requestRow(for: user, isReceived: false)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal)
                     }
                     .padding(.bottom, 40)
                     .frame(maxWidth: .infinity)
                 }
+
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarBackButtonHidden(true)
@@ -90,7 +92,10 @@ struct FriendRequestsView: View {
             }
             .onAppear {
                 loadFriendRequests()
-                listenForAcceptedFriendRequests()
+                setupListener()
+            }
+            .onDisappear {
+                listener?.remove()
             }
         }
     }
@@ -123,6 +128,17 @@ struct FriendRequestsView: View {
                         .background(Color.green)
                         .cornerRadius(8)
                 }
+                
+                Button(action: {
+                    declineFriendRequest(from: user)
+                }) {
+                    Text("Decline")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.red)
+                        .cornerRadius(8)
+                }
             } else {
                 Button(action: {
                     cancelFriendRequest(to: user)
@@ -141,6 +157,32 @@ struct FriendRequestsView: View {
         .cornerRadius(10)
     }
 
+    private func setupListener() {
+        let db = Firestore.firestore()
+        
+        // Listener for received requests
+        listener = db.collection("friendRequests")
+            .whereField("receiverId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .addSnapshotListener { snapshot, _ in
+                let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
+                fetchUserProfiles(userIDs: senderIDs) { users in
+                    self.receivedRequests = users
+                }
+            }
+        
+        // Listener for sent requests
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .addSnapshotListener { snapshot, _ in
+                let receiverIDs = snapshot?.documents.compactMap { $0.data()["receiverId"] as? String } ?? []
+                fetchUserProfiles(userIDs: receiverIDs) { users in
+                    self.sentRequests = users
+                }
+            }
+    }
+
     private func loadFriendRequests() {
         let db = Firestore.firestore()
 
@@ -151,7 +193,6 @@ struct FriendRequestsView: View {
                 let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
                 fetchUserProfiles(userIDs: senderIDs) { users in
                     self.receivedRequests = users
-                    sendNotificationIfEnabled(for: users, isReceived: true)
                 }
             }
 
@@ -181,11 +222,18 @@ struct FriendRequestsView: View {
             .getDocuments { snapshot, _ in
                 snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
                 receivedRequests.removeAll { $0.id == user.id }
-
-                // Signal the sender for local notification
-                senderRef.updateData([
-                    "pendingFriendRequestAccepted": FieldValue.arrayUnion([userID])
-                ])
+            }
+    }
+    
+    private func declineFriendRequest(from user: UserProfile) {
+        let db = Firestore.firestore()
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: user.id)
+            .whereField("receiverId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, _ in
+                snapshot?.documents.forEach { $0.reference.delete() }
+                receivedRequests.removeAll { $0.id == user.id }
             }
     }
 
@@ -222,54 +270,6 @@ struct FriendRequestsView: View {
 
         group.notify(queue: .main) {
             completion(profiles)
-        }
-    }
-
-    private func sendNotificationIfEnabled(for users: [UserProfile], isReceived: Bool) {
-        for user in users {
-            let content = UNMutableNotificationContent()
-            content.title = isReceived ? "New Friend Request" : "Friend Request Sent"
-            content.body = "You have a new friend request from \(user.username)"
-            content.sound = .default
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-            let request = UNNotificationRequest(identifier: "\(isReceived ? "received" : "sent")_\(user.id)", content: content, trigger: trigger)
-
-            UNUserNotificationCenter.current().add(request)
-        }
-    }
-
-    private func sendAcceptedRequestNotification(for user: UserProfile) {
-        let content = UNMutableNotificationContent()
-        content.title = "Friend Request Accepted"
-        content.body = "\(user.username) accepted your friend request!"
-        content.sound = .default
-
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
-        let request = UNNotificationRequest(identifier: "accepted_\(user.id)", content: content, trigger: trigger)
-
-        UNUserNotificationCenter.current().add(request)
-    }
-
-    private func listenForAcceptedFriendRequests() {
-        let db = Firestore.firestore()
-        let userRef = db.collection("users").document(userID)
-
-        userRef.addSnapshotListener { snapshot, error in
-            guard let data = snapshot?.data() else { return }
-
-            if let acceptedIDs = data["pendingFriendRequestAccepted"] as? [String] {
-                for id in acceptedIDs {
-                    fetchUserProfiles(userIDs: [id]) { users in
-                        if let user = users.first {
-                            sendAcceptedRequestNotification(for: user)
-                        }
-                    }
-                }
-
-                // Clear the accepted list after showing the notification
-                userRef.updateData(["pendingFriendRequestAccepted": []])
-            }
         }
     }
 }
