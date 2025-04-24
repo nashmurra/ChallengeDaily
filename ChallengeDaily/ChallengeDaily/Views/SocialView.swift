@@ -20,7 +20,6 @@ struct SocialView: View {
     @Environment(\.presentationMode) var presentationMode
     @State private var searchText: String = ""
     @State private var friends: [UserProfile] = []
-    @State private var profileImage: UIImage?
     @State private var friendRequests: [UserProfile] = []
     @State private var recommendedFriends: [UserProfile] = []
     @State private var outgoingRequests: [String] = []
@@ -78,6 +77,8 @@ struct SocialView: View {
                 setupFriendListener()
                 setupFriendRequestListener()
                 loadRecommendedFriends()
+                loadFriendRequests()
+                loadOutgoingFriendRequests()
             }
             .onDisappear {
                 friendListener?.remove()
@@ -136,462 +137,397 @@ struct SocialView: View {
     
     private var friendsSection: some View {
         VStack {
-            friendsSectionHeader
+            Text("Your Friends")
+                .font(.title)
+                .foregroundColor(.white)
+                .fontWeight(.bold)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 10)
             
             if friends.isEmpty {
-                noFriendsView
+                Text("You have no friends yet.")
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding()
             } else {
-                friendsGrid
+                let columns = [
+                    GridItem(.flexible(), spacing: 20),
+                    GridItem(.flexible(), spacing: 20),
+                    GridItem(.flexible(), spacing: 20)
+                ]
+                
+                LazyVGrid(columns: columns, spacing: 20) {
+                    ForEach(friends) { friend in
+                        VStack(spacing: 8) {
+                            Button(action: {
+                                selectedUserID = friend.id
+                            }) {
+                                VStack(spacing: 8) {
+                                    AsyncImage(url: URL(string: friend.profilePic)) { image in
+                                        image.resizable()
+                                    } placeholder: {
+                                        Image(systemName: "person.circle.fill")
+                                            .resizable()
+                                    }
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 60, height: 60)
+                                    .clipShape(Circle())
+                                    
+                                    Text(friend.username)
+                                        .font(.caption)
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                }
+                                .frame(width: 95, height: 100)
+                                .padding()
+                                .background(Color.gray.opacity(0.2))
+                                .cornerRadius(10)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Button(action: {
+                                friendToRemove = friend
+                                showRemoveFriendAlert = true
+                            }) {
+                                Text("Remove")
+                                    .font(.caption2)
+                                    .foregroundColor(.red)
+                                    .padding(5)
+                                    .background(Color.red.opacity(0.2))
+                                    .cornerRadius(5)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
             }
         }
     }
-
-    private var friendsSectionHeader: some View {
-        Text("Your Friends")
+    
+    private var recommendedTitle: some View {
+        Text("Recommended Friends")
             .font(.title)
             .foregroundColor(.white)
             .fontWeight(.bold)
             .frame(maxWidth: .infinity)
             .padding(.top, 10)
     }
-
-    private var noFriendsView: some View {
-        Text("You have no friends yet.")
-            .foregroundColor(.white.opacity(0.6))
-            .padding()
-    }
-
-    private var friendsGrid: some View {
-        let columns = [
-            GridItem(.flexible(), spacing: 20),
-            GridItem(.flexible(), spacing: 20),
-            GridItem(.flexible(), spacing: 20)
-        ]
-        
-        return LazyVGrid(columns: columns, spacing: 20) {
-            ForEach(friends) { friend in
-                friendGridItem(friend: friend)
+    
+    private var friendsList: some View {
+        VStack(spacing: 10) {
+            ForEach(filteredProfiles) { profile in
+                friendRow(for: profile)
             }
         }
         .padding(.horizontal)
     }
-
-    private func friendGridItem(friend: UserProfile) -> some View {
-        VStack(spacing: 8) {
-            friendProfileButton(friend: friend)
-            removeFriendButton(friend: friend)
-        }
-    }
-
-    private func friendProfileButton(friend: UserProfile) -> some View {
-        Button(action: {
-            selectedUserID = friend.id
-        }) {
-            VStack(spacing: 8) {
-                friendProfileImage(friend: friend)
-                friendUsername(friend: friend)
+    
+    private var searchResults: some View {
+        VStack(spacing: 10) {
+            ForEach(filteredProfiles) { profile in
+                friendRow(for: profile)
             }
-            .frame(width: 95, height: 100)
-            .padding()
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(10)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(.horizontal)
     }
-
-    private func friendProfileImage(friend: UserProfile) -> some View {
-        Group {
-            if friend.profilePic.isEmpty {
+    
+    private func friendRow(for user: UserProfile) -> some View {
+        HStack {
+            AsyncImage(url: URL(string: user.profilePic)) { image in
+                image.resizable()
+            } placeholder: {
                 Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 60, height: 60)
-                    .foregroundColor(.gray)
-            } else {
-                if let image = decodeBase64(friend.profilePic) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                } else {
-                    AsyncImage(url: URL(string: friend.profilePic)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        case .failure(_):
-                            Image(systemName: "person.circle.fill")
-                                .resizable()
-                                .scaledToFill()
-                                .foregroundColor(.gray)
-                        case .empty:
-                            ProgressView()
-                        @unknown default:
-                            EmptyView()
-                        }
-                    }
-                }
             }
-        }
-        .frame(width: 60, height: 60)
-        .clipShape(Circle())
-    }
-
-    private func friendUsername(friend: UserProfile) -> some View {
-        Text(friend.username)
-            .font(.caption)
-            .foregroundColor(.white)
-            .multilineTextAlignment(.center)
-            .lineLimit(2)
-    }
-
-    private func removeFriendButton(friend: UserProfile) -> some View {
-        Button(action: {
-            friendToRemove = friend
-            showRemoveFriendAlert = true
-        }) {
-            Text("Remove")
-                .font(.caption2)
-                .foregroundColor(.red)
-                .padding(5)
-                .background(Color.red.opacity(0.2))
-                .cornerRadius(5)
-        }
-    }
-        
-        private var recommendedTitle: some View {
-            Text("Recommended Friends")
-                .font(.title)
+            .frame(width: 40, height: 40)
+            .clipShape(Circle())
+            
+            Text(user.username)
                 .foregroundColor(.white)
-                .fontWeight(.bold)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 10)
-        }
-        
-        private var friendsList: some View {
-            VStack(spacing: 10) {
-                ForEach(filteredProfiles) { profile in
-                    friendRow(for: profile)
-                }
-            }
-            .padding(.horizontal)
-        }
-        
-        private var searchResults: some View {
-            VStack(spacing: 10) {
-                ForEach(filteredProfiles) { profile in
-                    friendRow(for: profile)
-                }
-            }
-            .padding(.horizontal)
-        }
-    
-        
-        private func friendRow(for user: UserProfile) -> some View {
-            Button(action: {
-                checkProfilePrivacyBeforeNavigation(user: user)
-            }) {
-                HStack {
-                    AsyncImage(url: URL(string: user.profilePic)) { image in
-                        image.resizable()
-                    } placeholder: {
-                        Image(systemName: "person.circle.fill")
-                    }
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
-                    
-                    Text(user.username)
+                .font(.system(size: 18, weight: .medium))
+                .padding(.leading, 10)
+            
+            Spacer()
+            
+            if friends.contains(where: { $0.id == user.id }) {
+                Image(systemName: "checkmark.circle.fill")
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .foregroundColor(.green)
+            } else if let request = friendRequests.first(where: { $0.id == user.id }) {
+                // Received request - show Accept button
+                Button(action: {
+                    acceptFriendRequest(from: request)
+                }) {
+                    Text("Accept")
                         .foregroundColor(.white)
-                        .font(.system(size: 18, weight: .medium))
-                        .padding(.leading, 10)
-                    
-                    Spacer()
-                    
-                    if friends.contains(where: { $0.id == user.id }) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .resizable()
-                            .frame(width: 24, height: 24)
-                            .foregroundColor(.green)
-                    } else if outgoingRequests.contains(user.id) {
-                        // User disappears when you send request
-                        EmptyView()
-                    } else if friendRequests.contains(where: { $0.id == user.id }) {
-                        // Shows accept button but stays in list
-                        Button(action: {
-                            acceptFriendRequest(from: user)
-                        }) {
-                            Text("Accept")
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.green)
-                                .cornerRadius(8)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    } else {
-                        Button(action: {
-                            sendFriendRequest(to: user)
-                        }) {
-                            Image(systemName: "plus.circle.fill")
-                                .resizable()
-                                .frame(width: 24, height: 24)
-                                .foregroundColor(.pink)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.green)
+                        .cornerRadius(8)
                 }
-                .padding()
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(10)
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-        
-        // MARK: - Firebase Helpers
-        
-        private func setupFriendListener() {
-            let db = Firestore.firestore()
-            friendListener = db.collection("users").document(userID).addSnapshotListener { document, _ in
-                if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
-                    fetchUserProfiles(userIDs: friendIDs) { self.friends = $0 }
+            } else if outgoingRequests.contains(user.id) {
+                // Sent request - show Pending
+                Text("Pending")
+                    .foregroundColor(.yellow)
+                    .font(.caption)
+            } else {
+                // No request - show Add button
+                Button(action: {
+                    sendFriendRequest(to: user)
+                }) {
+                    Image(systemName: "plus.circle.fill")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(.pink)
                 }
             }
         }
-        
-        private func setupFriendRequestListener() {
-            let db = Firestore.firestore()
-            requestListener = db.collection("friendRequests")
-                .whereField("senderId", isEqualTo: userID)
-                .addSnapshotListener { snapshot, _ in
-                    guard let snapshot = snapshot else { return }
-                    
-                    snapshot.documentChanges.forEach { change in
-                        if change.type == .removed {
-                            let receiverId = change.document.data()["receiverId"] as? String ?? ""
-                            handleCanceledRequest(userID: receiverId)
-                        }
-                    }
-                }
-            db.collection("friendRequests")
-                .whereField("receiverId", isEqualTo: userID)
-                .whereField("status", isEqualTo: "pending")
-                .addSnapshotListener { snapshot, _ in
-                    guard let snapshot = snapshot else { return }
-                    
-                    let senderIDs = snapshot.documents.compactMap { $0.data()["senderId"] as? String }
-                    fetchUserProfiles(userIDs: senderIDs) { users in
-                        self.friendRequests = users
-                        self.loadRecommendedFriends()
-                    }
-                }
+        .padding()
+        .background(Color.gray.opacity(0.2))
+        .cornerRadius(10)
+        .onTapGesture {
+            checkProfilePrivacyBeforeNavigation(user: user)
         }
+    }
+
+    private func acceptFriendRequest(from user: UserProfile) {
+        let db = Firestore.firestore()
+        let currentUserRef = db.collection("users").document(userID)
+        let senderRef = db.collection("users").document(user.id)
         
-        private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
-            if user.id == userID || friends.contains(where: { $0.id == user.id }) {
-                selectedUserID = user.id
-                return
-            }
-            
-            Firestore.firestore().collection("users").document(user.id).getDocument { document, _ in
-                if let document = document, document.exists {
-                    let isPrivate = document.data()?["isPrivate"] as? Bool ?? false
-                    if isPrivate {
-                        privateProfileUsername = user.username
-                        showPrivateProfileAlert = true
-                    } else {
-                        selectedUserID = user.id
-                    }
-                }
-            }
-        }
+        // Update both users' friend lists
+        currentUserRef.updateData(["friends": FieldValue.arrayUnion([user.id])])
+        senderRef.updateData(["friends": FieldValue.arrayUnion([userID])])
         
-        private func loadRecommendedFriends() {
-            let db = Firestore.firestore()
-            db.collection("users").getDocuments { snapshot, _ in
-                if let documents = snapshot?.documents {
-                    let users = documents.compactMap { doc -> UserProfile? in
-                        let id = doc.documentID
-                        guard id != self.userID else { return nil }
-                        let data = doc.data()
-                        return UserProfile(
-                            id: id,
-                            username: data["username"] as? String ?? "",
-                            profilePic: data["profilePic"] as? String ?? ""
-                        )
-                    }
-                    let excludedIDs = Set(friends.map { $0.id } + outgoingRequests)
-                    self.recommendedFriends = users.filter { !excludedIDs.contains($0.id) }
-                }
-            }
-        }
-        
-        private func loadFriendRequests() {
-            let db = Firestore.firestore()
-            db.collection("friendRequests")
-                .whereField("receiverId", isEqualTo: userID)
-                .whereField("status", isEqualTo: "pending")
-                .getDocuments { snapshot, _ in
-                    if let documents = snapshot?.documents {
-                        let senderIDs = documents.compactMap { $0.data()["senderId"] as? String }
-                        fetchUserProfiles(userIDs: senderIDs) { self.friendRequests = $0 }
-                    }
-                }
-        }
-        
-        private func loadOutgoingFriendRequests() {
-            let db = Firestore.firestore()
-            db.collection("friendRequests")
-                .whereField("senderId", isEqualTo: userID)
-                .whereField("status", isEqualTo: "pending")
-                .getDocuments { snapshot, _ in
-                    if let documents = snapshot?.documents {
-                        self.outgoingRequests = documents.compactMap { $0.data()["receiverId"] as? String }
-                    }
-                }
-        }
-        
-        private func fetchUserProfiles(userIDs: [String], completion: @escaping ([UserProfile]) -> Void) {
-            let db = Firestore.firestore()
-            var profiles: [UserProfile] = []
-            let group = DispatchGroup()
-            
-            for id in userIDs {
-                group.enter()
-                db.collection("users").document(id).getDocument { document, _ in
-                    if let document = document, let data = document.data() {
-                        profiles.append(UserProfile(
-                            id: id,
-                            username: data["username"] as? String ?? "",
-                            profilePic: data["profilePic"] as? String ?? ""
-                        ))
-                    }
-                    group.leave()
-                }
-            }
-            
-            group.notify(queue: .main) {
-                completion(profiles.sorted { $0.username < $1.username })
-            }
-        }
-        
-        private func sendFriendRequest(to user: UserProfile) {
-            let db = Firestore.firestore()
-            db.collection("friendRequests")
-                .whereField("senderId", isEqualTo: userID)
-                .whereField("receiverId", isEqualTo: user.id)
-                .whereField("status", isEqualTo: "pending")
-                .getDocuments { snapshot, _ in
-                    guard let snapshot = snapshot, snapshot.isEmpty else { return }
-                    
-                    let requestData: [String: Any] = [
-                        "senderId": userID,
-                        "senderName": userViewModel.username,
-                        "receiverId": user.id,
-                        "receiverName": user.username,
-                        "status": "pending",
-                        "timestamp": Timestamp(date: Date())
-                    ]
-                    
-                    db.collection("friendRequests").addDocument(data: requestData) { error in
-                        if error == nil {
-                            outgoingRequests.append(user.id)
-                            loadRecommendedFriends() // Refresh the list
-                            
-                            db.collection("users").document(user.id).getDocument { doc, _ in
-                                if let doc = doc,
-                                   let settings = doc.data()?["notifications"] as? [String: Bool],
-                                   settings["Friend Requests"] == true {
-                                    // Handle notification
-                                }
-                            }
-                        }
-                    }
-                }
-        }
-        
-        private func removeFriend(friendID: String) {
-            let db = Firestore.firestore()
-            let batch = db.batch()
-            
-            // Remove from current user's friends list
-            let currentUserRef = db.collection("users").document(userID)
-            batch.updateData([
-                "friends": FieldValue.arrayRemove([friendID])
-            ], forDocument: currentUserRef)
-            
-            // Remove from friend's friends list
-            let friendRef = db.collection("users").document(friendID)
-            batch.updateData([
-                "friends": FieldValue.arrayRemove([userID])
-            ], forDocument: friendRef)
-            
-            batch.commit { error in
-                if let error = error {
-                    print("Error removing friend: \(error.localizedDescription)")
-                } else {
-                    friends.removeAll { $0.id == friendID }
-                    
-                    // Re-add to recommended friends if appropriate
-                    fetchUserProfiles(userIDs: [friendID]) { profiles in
-                        if let profile = profiles.first {
-                            if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
-                                !friendRequests.contains(where: { $0.id == profile.id }) &&
-                                !outgoingRequests.contains(profile.id) {
-                                recommendedFriends.append(profile)
-                                recommendedFriends.sort { $0.username < $1.username }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        private func handleCanceledRequest(userID: String) {
-            outgoingRequests.removeAll { $0 == userID }
-            
-            fetchUserProfiles(userIDs: [userID]) { profiles in
-                if let profile = profiles.first {
-                    if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
-                        !friends.contains(where: { $0.id == profile.id }) {
-                        recommendedFriends.append(profile)
-                        recommendedFriends.sort { $0.username < $1.username }
-                    }
-                }
-            }
-        }
-        
-        private func acceptFriendRequest(from user: UserProfile) {
-            let db = Firestore.firestore()
-            let currentUserRef = db.collection("users").document(userID)
-            let senderRef = db.collection("users").document(user.id)
-            
-            currentUserRef.updateData(["friends": FieldValue.arrayUnion([user.id])])
-            senderRef.updateData(["friends": FieldValue.arrayUnion([userID])])
-            
-            db.collection("friendRequests")
-                .whereField("senderId", isEqualTo: user.id)
-                .whereField("receiverId", isEqualTo: userID)
-                .whereField("status", isEqualTo: "pending")
-                .getDocuments { snapshot, _ in
-                    snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
-                    
-                    DispatchQueue.main.async {
-                        friendRequests.removeAll { $0.id == user.id }
+        // Update the request status
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: user.id)
+            .whereField("receiverId", isEqualTo: userID)
+            .getDocuments { snapshot, _ in
+                snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
+                
+                // Update local state
+                DispatchQueue.main.async {
+                    // Remove from requests
+                    friendRequests.removeAll { $0.id == user.id }
+                    // Add to friends
+                    if !friends.contains(where: { $0.id == user.id }) {
                         friends.append(user)
+                    }
+                    // Remove from recommended if needed
+                    recommendedFriends.removeAll { $0.id == user.id }
+                }
+            }
+    }
+
+    
+    // MARK: - Firebase Helpers
+    
+    private func setupFriendListener() {
+        let db = Firestore.firestore()
+        friendListener = db.collection("users").document(userID).addSnapshotListener { document, _ in
+            if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
+                fetchUserProfiles(userIDs: friendIDs) { self.friends = $0 }
+            }
+        }
+    }
+    
+    private func setupFriendRequestListener() {
+        let db = Firestore.firestore()
+        requestListener = db.collection("friendRequests")
+            .whereField("receiverId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .addSnapshotListener { snapshot, _ in
+                let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
+                fetchUserProfiles(userIDs: senderIDs) { users in
+                    self.friendRequests = users
+                    // No need to filter recommended here - we want to show all non-friends
+                }
+            }
+        
+        // Listener for outgoing requests
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .addSnapshotListener { snapshot, _ in
+                self.outgoingRequests = snapshot?.documents.compactMap { $0.data()["receiverId"] as? String } ?? []
+            }
+    }
+    
+    private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
+        if user.id == userID || friends.contains(where: { $0.id == user.id }) {
+            selectedUserID = user.id
+            return
+        }
+        
+        Firestore.firestore().collection("users").document(user.id).getDocument { document, _ in
+            if let document = document, document.exists {
+                let isPrivate = document.data()?["isPrivate"] as? Bool ?? false
+                if isPrivate {
+                    privateProfileUsername = user.username
+                    showPrivateProfileAlert = true
+                } else {
+                    selectedUserID = user.id
+                }
+            }
+        }
+    }
+    
+    private func loadRecommendedFriends() {
+        let db = Firestore.firestore()
+        db.collection("users").getDocuments { snapshot, _ in
+            if let documents = snapshot?.documents {
+                let users = documents.compactMap { doc -> UserProfile? in
+                    let id = doc.documentID
+                    guard id != self.userID else { return nil }
+                    let data = doc.data()
+                    return UserProfile(
+                        id: id,
+                        username: data["username"] as? String ?? "",
+                        profilePic: data["profilePic"] as? String ?? ""
+                    )
+                }
+                let friendIDs = Set(friends.map { $0.id })
+                self.recommendedFriends = users.filter { !friendIDs.contains($0.id) }
+            }
+        }
+    }
+    
+    private func loadFriendRequests() {
+        let db = Firestore.firestore()
+        db.collection("friendRequests")
+            .whereField("receiverId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, _ in
+                if let documents = snapshot?.documents {
+                    let senderIDs = documents.compactMap { $0.data()["senderId"] as? String }
+                    fetchUserProfiles(userIDs: senderIDs) { self.friendRequests = $0 }
+                }
+            }
+    }
+    
+    private func loadOutgoingFriendRequests() {
+        let db = Firestore.firestore()
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, _ in
+                if let documents = snapshot?.documents {
+                    self.outgoingRequests = documents.compactMap { $0.data()["receiverId"] as? String }
+                }
+            }
+    }
+    
+    private func fetchUserProfiles(userIDs: [String], completion: @escaping ([UserProfile]) -> Void) {
+        let db = Firestore.firestore()
+        var profiles: [UserProfile] = []
+        let group = DispatchGroup()
+        
+        for id in userIDs {
+            group.enter()
+            db.collection("users").document(id).getDocument { document, _ in
+                if let document = document, let data = document.data() {
+                    profiles.append(UserProfile(
+                        id: id,
+                        username: data["username"] as? String ?? "",
+                        profilePic: data["profilePic"] as? String ?? ""
+                    ))
+                }
+                group.leave()
+            }
+        }
+        
+        group.notify(queue: .main) {
+            completion(profiles.sorted { $0.username < $1.username })
+        }
+    }
+    
+    private func sendFriendRequest(to user: UserProfile) {
+        let db = Firestore.firestore()
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: userID)
+            .whereField("receiverId", isEqualTo: user.id)
+            .whereField("status", isEqualTo: "pending")
+            .getDocuments { snapshot, _ in
+                guard let snapshot = snapshot, snapshot.isEmpty else { return }
+                
+                let requestData: [String: Any] = [
+                    "senderId": userID,
+                    "senderName": userViewModel.username,
+                    "receiverId": user.id,
+                    "receiverName": user.username,
+                    "status": "pending",
+                    "timestamp": Timestamp(date: Date())
+                ]
+                
+                db.collection("friendRequests").addDocument(data: requestData) { error in
+                    if error == nil {
+                        outgoingRequests.append(user.id)
                         recommendedFriends.removeAll { $0.id == user.id }
+                        
+                        db.collection("users").document(user.id).getDocument { doc, _ in
+                            if let doc = doc,
+                               let settings = doc.data()?["notifications"] as? [String: Bool],
+                               settings["Friend Requests"] == true {
+                                // Handle notification
+                            }
+                        }
                     }
                 }
-        }
+            }
+    }
     
-    private func decodeBase64(_ base64String: String) -> UIImage? {
-        guard let imageData = Data(base64Encoded: base64String),
-              let image = UIImage(data: imageData) else {
-            return nil
-        }
-        return image
-    }
+    private func removeFriend(friendID: String) {
+        let db = Firestore.firestore()
+        let batch = db.batch()
         
+        // Remove from current user's friends list
+        let currentUserRef = db.collection("users").document(userID)
+        batch.updateData([
+            "friends": FieldValue.arrayRemove([friendID])
+        ], forDocument: currentUserRef)
+        
+        // Remove from friend's friends list
+        let friendRef = db.collection("users").document(friendID)
+        batch.updateData([
+            "friends": FieldValue.arrayRemove([userID])
+        ], forDocument: friendRef)
+        
+        batch.commit { error in
+            if let error = error {
+                print("Error removing friend: \(error.localizedDescription)")
+            } else {
+                friends.removeAll { $0.id == friendID }
+                
+                // Re-add to recommended friends if appropriate
+                fetchUserProfiles(userIDs: [friendID]) { profiles in
+                    if let profile = profiles.first {
+                        if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                           !friendRequests.contains(where: { $0.id == profile.id }) &&
+                           !outgoingRequests.contains(profile.id) {
+                            recommendedFriends.append(profile)
+                            recommendedFriends.sort { $0.username < $1.username }
+                        }
+                    }
+                }
+            }
+        }
     }
+    
+    private func handleCanceledRequest(userID: String) {
+        outgoingRequests.removeAll { $0 == userID }
+        
+        fetchUserProfiles(userIDs: [userID]) { profiles in
+            if let profile = profiles.first {
+                if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                   !friends.contains(where: { $0.id == profile.id }) {
+                    recommendedFriends.append(profile)
+                    recommendedFriends.sort { $0.username < $1.username }
+                }
+            }
+        }
+    }
+}
     
 
 import SwiftUI

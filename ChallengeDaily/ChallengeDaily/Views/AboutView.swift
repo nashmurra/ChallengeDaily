@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct AboutView: View {
+    @Environment(\.presentationMode) var presentationMode
+    
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Image("appBackground")
                     .resizable()
@@ -43,6 +45,22 @@ struct AboutView: View {
                     .padding(.top, 10)
                     
                     Spacer()
+                }
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                            .foregroundColor(.white)
+                        Text("")
+                            .foregroundColor(.white)
+                    }
                 }
             }
         }
