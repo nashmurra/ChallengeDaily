@@ -225,10 +225,10 @@ struct ProfileView: View {
     
     // MARK: - Methods
     private func loadProfileData() {
-        postViewModel.fetchPosts()
+        //postViewModel.fetchPosts()
         fetchProfileImage()
         fetchUserData()
-        //postViewModel.fetchPostsForUser(userID: userID)
+        postViewModel.fetchPostsForUser(userID: userID)
     }
     
     private func handleImagePickerDismiss() {
