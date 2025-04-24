@@ -19,6 +19,13 @@ struct ContentView: View {
         UITabBar.appearance().backgroundColor = UIColor(Color.white)
         UITabBar.appearance().unselectedItemTintColor = UIColor(Color.darkBlueColor) // Set disabled tabs to red
     }
+    
+    var mainView = MainView()
+    var socialView = SocialView()
+    var settingsView = SettingsView()
+    var challengeView = ChallengeDashboardView()
+    var profileView = ProfileView()
+
 
 
     var body: some View {
@@ -35,34 +42,27 @@ struct ContentView: View {
                     //Color.black.opacity(0.2).ignoresSafeArea()
                     
                     TabView {
-
-                        MainView()
-                            //.preferredColorScheme(.dark)
+                        mainView
                             .tabItem {
                                 Label("Home", systemImage: "house.fill")
                             }
 
-                        SocialView()
-                           // .preferredColorScheme(.dark)
+                        socialView
                             .tabItem {
                                 Label("Friends", systemImage: "shared.with.you")
                             }
-                        
-                        SettingsView()
-                           // .preferredColorScheme(.dark)
+
+                        settingsView
                             .tabItem {
                                 Label("Explore", systemImage: "target")
                             }
 
-                        
-                        ChallengeDashboardView()
-                           //.preferredColorScheme(.dark)
+                        challengeView
                             .tabItem {
                                 Label("Challenge", systemImage: "star.fill")
                             }
-                        
-                        ProfileView()
-                            //.preferredColorScheme(.dark)
+
+                        profileView
                             .tabItem {
                                 Label("Profile", systemImage: "person.fill")
                             }
