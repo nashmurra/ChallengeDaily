@@ -8,12 +8,15 @@
 import SwiftUI
 import Firebase
 import FirebaseFirestore
+import Contacts
 import UserNotifications
 
 struct UserProfile: Identifiable {
     var id: String
     var username: String
     var profilePic: String
+    var phoneNumber: String?
+    var isContact: Bool = false
 }
 
 struct SocialView: View {
@@ -23,6 +26,8 @@ struct SocialView: View {
     @State private var friendRequests: [UserProfile] = []
     @State private var recommendedFriends: [UserProfile] = []
     @State private var outgoingRequests: [String] = []
+    @State private var contactsMatched: [String] = []
+    @State private var isLoadingContacts = false
     @AppStorage("uid") var userID: String = ""
     @StateObject var userViewModel = UserViewModel()
     @State private var showPrivateProfileAlert = false
@@ -33,9 +38,18 @@ struct SocialView: View {
     @State private var showRemoveFriendAlert = false
     @State private var friendToRemove: UserProfile?
     
+    private let contactStore = CNContactStore()
+    
     var filteredProfiles: [UserProfile] {
-        searchText.isEmpty ? recommendedFriends :
-        recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
+        let filtered = searchText.isEmpty ? recommendedFriends :
+                     recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
+        
+        return filtered.sorted {
+            if $0.isContact == $1.isContact {
+                return $0.username < $1.username
+            }
+            return $0.isContact && !$1.isContact
+        }
     }
     
     var body: some View {
@@ -49,17 +63,294 @@ struct SocialView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         Spacer().frame(height: 20)
-                        searchBar
+                        
+                        // Search Bar
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.gray)
+                            
+                            TextField("Search...", text: $searchText)
+                                .foregroundColor(.white)
+                                .autocorrectionDisabled(true)
+                                .textInputAutocapitalization(.never)
+                            
+                            if !searchText.isEmpty {
+                                Button(action: { searchText = "" }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                }
+                            }
+                        }
+                        .padding(10)
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
                         
                         if searchText.isEmpty {
-                            friendsSection
-                            recommendedTitle
-                            friendsList
+                            // Friends Section
+                            VStack {
+                                Text("Your Friends")
+                                    .font(.title)
+                                    .foregroundColor(.white)
+                                    .fontWeight(.bold)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.top, 10)
+                                
+                                if friends.isEmpty {
+                                    Text("You have no friends yet.")
+                                        .foregroundColor(.white.opacity(0.6))
+                                        .padding()
+                                } else {
+                                    let columns = [
+                                        GridItem(.flexible(), spacing: 20),
+                                        GridItem(.flexible(), spacing: 20),
+                                        GridItem(.flexible(), spacing: 20)
+                                    ]
+                                    
+                                    LazyVGrid(columns: columns, spacing: 20) {
+                                        ForEach(friends) { friend in
+                                            VStack(spacing: 8) {
+                                                Button(action: {
+                                                    selectedUserID = friend.id
+                                                }) {
+                                                    VStack(spacing: 8) {
+                                                        AsyncImage(url: URL(string: friend.profilePic)) { image in
+                                                            image.resizable()
+                                                        } placeholder: {
+                                                            Image(systemName: "person.circle.fill")
+                                                                .resizable()
+                                                        }
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .frame(width: 60, height: 60)
+                                                        .clipShape(Circle())
+                                                        
+                                                        Text(friend.username)
+                                                            .font(.caption)
+                                                            .foregroundColor(.white)
+                                                            .multilineTextAlignment(.center)
+                                                            .lineLimit(2)
+                                                    }
+                                                    .frame(width: 95, height: 100)
+                                                    .padding()
+                                                    .background(Color.gray.opacity(0.2))
+                                                    .cornerRadius(10)
+                                                }
+                                                .buttonStyle(PlainButtonStyle())
+                                                
+                                                Button(action: {
+                                                    friendToRemove = friend
+                                                    showRemoveFriendAlert = true
+                                                }) {
+                                                    Text("Remove")
+                                                        .font(.caption2)
+                                                        .foregroundColor(.red)
+                                                        .padding(5)
+                                                        .background(Color.red.opacity(0.2))
+                                                        .cornerRadius(5)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
+                            
+                            // Contacts Section
+                            if !contactsMatched.isEmpty {
+                                Text("Contacts")
+                                    .font(.title)
+                                    .foregroundColor(.white)
+                                    .fontWeight(.bold)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal)
+                                    .padding(.top, 10)
+                            }
+                            
+                            // Recommended Friends
+                            Text("Recommended Friends")
+                                .font(.title)
+                                .foregroundColor(.white)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
+                                .padding(.top, 10)
+                            
+                            // Friends List
+                            VStack(spacing: 10) {
+                                ForEach(filteredProfiles) { profile in
+                                    HStack {
+                                        ZStack(alignment: .bottomTrailing) {
+                                            AsyncImage(url: URL(string: profile.profilePic)) { phase in
+                                                switch phase {
+                                                case .success(let image):
+                                                    image.resizable()
+                                                case .failure:
+                                                    Image(systemName: "person.circle.fill")
+                                                        .resizable()
+                                                case .empty:
+                                                    ProgressView()
+                                                @unknown default:
+                                                    EmptyView()
+                                                }
+                                            }
+                                            .frame(width: 40, height: 40)
+                                            .clipShape(Circle())
+                                            
+                                            if profile.isContact {
+                                                Image(systemName: "person.crop.circle.fill.badge.checkmark")
+                                                    .foregroundColor(.blue)
+                                                    .font(.system(size: 12))
+                                                    .offset(x: 5, y: 5)
+                                            }
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(profile.username)
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 18, weight: .medium))
+                                            
+                                            if profile.isContact {
+                                                Text("From contacts")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.blue)
+                                            }
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if friends.contains(where: { $0.id == profile.id }) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .resizable()
+                                                .frame(width: 24, height: 24)
+                                                .foregroundColor(.green)
+                                        } else if let request = friendRequests.first(where: { $0.id == profile.id }) {
+                                            Button(action: {
+                                                acceptFriendRequest(from: request)
+                                            }) {
+                                                Text("Accept")
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 12)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.green)
+                                                    .cornerRadius(8)
+                                            }
+                                        } else if outgoingRequests.contains(profile.id) {
+                                            Text("Pending")
+                                                .foregroundColor(.yellow)
+                                                .font(.caption)
+                                        } else {
+                                            Button(action: {
+                                                sendFriendRequest(to: profile)
+                                            }) {
+                                                Image(systemName: "plus.circle.fill")
+                                                    .resizable()
+                                                    .frame(width: 24, height: 24)
+                                                    .foregroundColor(.pink)
+                                            }
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color.gray.opacity(0.2))
+                                    .cornerRadius(10)
+                                    .onTapGesture {
+                                        checkProfilePrivacyBeforeNavigation(user: profile)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
                         } else {
-                            searchResults
+                            // Search Results
+                            VStack(spacing: 10) {
+                                ForEach(filteredProfiles) { profile in
+                                    HStack {
+                                        ZStack(alignment: .bottomTrailing) {
+                                            AsyncImage(url: URL(string: profile.profilePic)) { phase in
+                                                switch phase {
+                                                case .success(let image):
+                                                    image.resizable()
+                                                case .failure:
+                                                    Image(systemName: "person.circle.fill")
+                                                        .resizable()
+                                                case .empty:
+                                                    ProgressView()
+                                                @unknown default:
+                                                    EmptyView()
+                                                }
+                                            }
+                                            .frame(width: 40, height: 40)
+                                            .clipShape(Circle())
+                                            
+                                            if profile.isContact {
+                                                Image(systemName: "person.crop.circle.fill.badge.checkmark")
+                                                    .foregroundColor(.blue)
+                                                    .font(.system(size: 12))
+                                                    .offset(x: 5, y: 5)
+                                            }
+                                        }
+                                        
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(profile.username)
+                                                .foregroundColor(.white)
+                                                .font(.system(size: 18, weight: .medium))
+                                            
+                                            if profile.isContact {
+                                                Text("From contacts")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.blue)
+                                            }
+                                        }
+                                        
+                                        Spacer()
+                                        
+                                        if friends.contains(where: { $0.id == profile.id }) {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .resizable()
+                                                .frame(width: 24, height: 24)
+                                                .foregroundColor(.green)
+                                        } else if let request = friendRequests.first(where: { $0.id == profile.id }) {
+                                            Button(action: {
+                                                acceptFriendRequest(from: request)
+                                            }) {
+                                                Text("Accept")
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 12)
+                                                    .padding(.vertical, 6)
+                                                    .background(Color.green)
+                                                    .cornerRadius(8)
+                                            }
+                                        } else if outgoingRequests.contains(profile.id) {
+                                            Text("Pending")
+                                                .foregroundColor(.yellow)
+                                                .font(.caption)
+                                        } else {
+                                            Button(action: {
+                                                sendFriendRequest(to: profile)
+                                            }) {
+                                                Image(systemName: "plus.circle.fill")
+                                                    .resizable()
+                                                    .frame(width: 24, height: 24)
+                                                    .foregroundColor(.pink)
+                                            }
+                                        }
+                                    }
+                                    .padding()
+                                    .background(Color.gray.opacity(0.2))
+                                    .cornerRadius(10)
+                                    .onTapGesture {
+                                        checkProfilePrivacyBeforeNavigation(user: profile)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
                         }
                     }
                     .padding(.bottom, 40)
+                }
+                
+                if isLoadingContacts {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
                 }
             }
             .navigationBarBackButtonHidden(true)
@@ -79,6 +370,7 @@ struct SocialView: View {
                 loadRecommendedFriends()
                 loadFriendRequests()
                 loadOutgoingFriendRequests()
+                checkContactsPermission()
             }
             .onDisappear {
                 friendListener?.remove()
@@ -101,6 +393,15 @@ struct SocialView: View {
                     Text("Are you sure you want to remove \(friend.username) from your friends?")
                 }
             }
+            .alert("Contacts Access", isPresented: .constant(CNContactStore.authorizationStatus(for: .contacts) == .denied)) {
+                Button("Cancel", role: .cancel) { }
+                Button("Settings") {
+                    guard let settingsUrl = URL(string: UIApplication.openSettingsURLString) else { return }
+                    UIApplication.shared.open(settingsUrl)
+                }
+            } message: {
+                Text("Please enable contacts access in Settings to find friends from your contacts.")
+            }
             .navigationDestination(isPresented: Binding(
                 get: { !selectedUserID.isEmpty },
                 set: { _ in selectedUserID = "" }
@@ -110,216 +411,63 @@ struct SocialView: View {
         }
     }
     
-    // MARK: - Subviews
+    // MARK: - Contact Matching
     
-    private var searchBar: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField("Search...", text: $searchText)
-                .foregroundColor(.white)
-                .autocorrectionDisabled(true)
-                .textInputAutocapitalization(.never)
-            
-            if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
+    private func checkContactsPermission() {
+        let status = CNContactStore.authorizationStatus(for: .contacts)
+        if status == .authorized {
+            matchContactsWithUsers()
+        } else if status == .notDetermined {
+            contactStore.requestAccess(for: .contacts) { granted, _ in
+                if granted {
+                    DispatchQueue.main.async {
+                        self.matchContactsWithUsers()
+                    }
                 }
             }
         }
-        .padding(10)
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(8)
-        .padding(.horizontal)
     }
     
-    private var friendsSection: some View {
-        VStack {
-            Text("Your Friends")
-                .font(.title)
-                .foregroundColor(.white)
-                .fontWeight(.bold)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 10)
+    private func matchContactsWithUsers() {
+        isLoadingContacts = true
+        contactsMatched.removeAll()
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            let keys = [CNContactPhoneNumbersKey] as [CNKeyDescriptor]
+            let request = CNContactFetchRequest(keysToFetch: keys)
+            var contactNumbers = Set<String>()
             
-            if friends.isEmpty {
-                Text("You have no friends yet.")
-                    .foregroundColor(.white.opacity(0.6))
-                    .padding()
-            } else {
-                let columns = [
-                    GridItem(.flexible(), spacing: 20),
-                    GridItem(.flexible(), spacing: 20),
-                    GridItem(.flexible(), spacing: 20)
-                ]
+            do {
+                try self.contactStore.enumerateContacts(with: request) { contact, _ in
+                    for phone in contact.phoneNumbers {
+                        let number = phone.value.stringValue
+                        let digits = number.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+                        contactNumbers.insert(digits)
+                    }
+                }
                 
-                LazyVGrid(columns: columns, spacing: 20) {
-                    ForEach(friends) { friend in
-                        VStack(spacing: 8) {
-                            Button(action: {
-                                selectedUserID = friend.id
-                            }) {
-                                VStack(spacing: 8) {
-                                    AsyncImage(url: URL(string: friend.profilePic)) { image in
-                                        image.resizable()
-                                    } placeholder: {
-                                        Image(systemName: "person.circle.fill")
-                                            .resizable()
-                                    }
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 60, height: 60)
-                                    .clipShape(Circle())
-                                    
-                                    Text(friend.username)
-                                        .font(.caption)
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                }
-                                .frame(width: 95, height: 100)
-                                .padding()
-                                .background(Color.gray.opacity(0.2))
-                                .cornerRadius(10)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            Button(action: {
-                                friendToRemove = friend
-                                showRemoveFriendAlert = true
-                            }) {
-                                Text("Remove")
-                                    .font(.caption2)
-                                    .foregroundColor(.red)
-                                    .padding(5)
-                                    .background(Color.red.opacity(0.2))
-                                    .cornerRadius(5)
+                DispatchQueue.main.async {
+                    self.recommendedFriends = self.recommendedFriends.map { user in
+                        var user = user
+                        if let phone = user.phoneNumber {
+                            let userDigits = phone.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+                            user.isContact = contactNumbers.contains(userDigits)
+                            if user.isContact {
+                                self.contactsMatched.append(user.id)
                             }
                         }
+                        return user
                     }
+                    self.isLoadingContacts = false
                 }
-                .padding(.horizontal)
-            }
-        }
-    }
-    
-    private var recommendedTitle: some View {
-        Text("Recommended Friends")
-            .font(.title)
-            .foregroundColor(.white)
-            .fontWeight(.bold)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 10)
-    }
-    
-    private var friendsList: some View {
-        VStack(spacing: 10) {
-            ForEach(filteredProfiles) { profile in
-                friendRow(for: profile)
-            }
-        }
-        .padding(.horizontal)
-    }
-    
-    private var searchResults: some View {
-        VStack(spacing: 10) {
-            ForEach(filteredProfiles) { profile in
-                friendRow(for: profile)
-            }
-        }
-        .padding(.horizontal)
-    }
-    
-    private func friendRow(for user: UserProfile) -> some View {
-        HStack {
-            AsyncImage(url: URL(string: user.profilePic)) { image in
-                image.resizable()
-            } placeholder: {
-                Image(systemName: "person.circle.fill")
-            }
-            .frame(width: 40, height: 40)
-            .clipShape(Circle())
-            
-            Text(user.username)
-                .foregroundColor(.white)
-                .font(.system(size: 18, weight: .medium))
-                .padding(.leading, 10)
-            
-            Spacer()
-            
-            if friends.contains(where: { $0.id == user.id }) {
-                Image(systemName: "checkmark.circle.fill")
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(.green)
-            } else if let request = friendRequests.first(where: { $0.id == user.id }) {
-                // Received request - show Accept button
-                Button(action: {
-                    acceptFriendRequest(from: request)
-                }) {
-                    Text("Accept")
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.green)
-                        .cornerRadius(8)
-                }
-            } else if outgoingRequests.contains(user.id) {
-                // Sent request - show Pending
-                Text("Pending")
-                    .foregroundColor(.yellow)
-                    .font(.caption)
-            } else {
-                // No request - show Add button
-                Button(action: {
-                    sendFriendRequest(to: user)
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .resizable()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(.pink)
-                }
-            }
-        }
-        .padding()
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(10)
-        .onTapGesture {
-            checkProfilePrivacyBeforeNavigation(user: user)
-        }
-    }
-
-    private func acceptFriendRequest(from user: UserProfile) {
-        let db = Firestore.firestore()
-        let currentUserRef = db.collection("users").document(userID)
-        let senderRef = db.collection("users").document(user.id)
-        
-        // Update both users' friend lists
-        currentUserRef.updateData(["friends": FieldValue.arrayUnion([user.id])])
-        senderRef.updateData(["friends": FieldValue.arrayUnion([userID])])
-        
-        // Update the request status
-        db.collection("friendRequests")
-            .whereField("senderId", isEqualTo: user.id)
-            .whereField("receiverId", isEqualTo: userID)
-            .getDocuments { snapshot, _ in
-                snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
-                
-                // Update local state
+            } catch {
+                print("Contact matching failed: \(error)")
                 DispatchQueue.main.async {
-                    // Remove from requests
-                    friendRequests.removeAll { $0.id == user.id }
-                    // Add to friends
-                    if !friends.contains(where: { $0.id == user.id }) {
-                        friends.append(user)
-                    }
-                    // Remove from recommended if needed
-                    recommendedFriends.removeAll { $0.id == user.id }
+                    self.isLoadingContacts = false
                 }
             }
+        }
     }
-
     
     // MARK: - Firebase Helpers
     
@@ -341,11 +489,9 @@ struct SocialView: View {
                 let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
                 fetchUserProfiles(userIDs: senderIDs) { users in
                     self.friendRequests = users
-                    // No need to filter recommended here - we want to show all non-friends
                 }
             }
         
-        // Listener for outgoing requests
         db.collection("friendRequests")
             .whereField("senderId", isEqualTo: userID)
             .whereField("status", isEqualTo: "pending")
@@ -384,11 +530,13 @@ struct SocialView: View {
                     return UserProfile(
                         id: id,
                         username: data["username"] as? String ?? "",
-                        profilePic: data["profilePic"] as? String ?? ""
+                        profilePic: data["profilePic"] as? String ?? "",
+                        phoneNumber: data["phoneNumber"] as? String
                     )
                 }
-                let friendIDs = Set(friends.map { $0.id })
+                let friendIDs = Set(self.friends.map { $0.id })
                 self.recommendedFriends = users.filter { !friendIDs.contains($0.id) }
+                self.checkContactsPermission()
             }
         }
     }
@@ -430,7 +578,8 @@ struct SocialView: View {
                     profiles.append(UserProfile(
                         id: id,
                         username: data["username"] as? String ?? "",
-                        profilePic: data["profilePic"] as? String ?? ""
+                        profilePic: data["profilePic"] as? String ?? "",
+                        phoneNumber: data["phoneNumber"] as? String
                     ))
                 }
                 group.leave()
@@ -464,14 +613,6 @@ struct SocialView: View {
                     if error == nil {
                         outgoingRequests.append(user.id)
                         recommendedFriends.removeAll { $0.id == user.id }
-                        
-                        db.collection("users").document(user.id).getDocument { doc, _ in
-                            if let doc = doc,
-                               let settings = doc.data()?["notifications"] as? [String: Bool],
-                               settings["Friend Requests"] == true {
-                                // Handle notification
-                            }
-                        }
                     }
                 }
             }
@@ -481,32 +622,25 @@ struct SocialView: View {
         let db = Firestore.firestore()
         let batch = db.batch()
         
-        // Remove from current user's friends list
         let currentUserRef = db.collection("users").document(userID)
         batch.updateData([
             "friends": FieldValue.arrayRemove([friendID])
         ], forDocument: currentUserRef)
         
-        // Remove from friend's friends list
         let friendRef = db.collection("users").document(friendID)
         batch.updateData([
             "friends": FieldValue.arrayRemove([userID])
         ], forDocument: friendRef)
         
         batch.commit { error in
-            if let error = error {
-                print("Error removing friend: \(error.localizedDescription)")
-            } else {
+            if error == nil {
                 friends.removeAll { $0.id == friendID }
-                
-                // Re-add to recommended friends if appropriate
                 fetchUserProfiles(userIDs: [friendID]) { profiles in
                     if let profile = profiles.first {
                         if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
                            !friendRequests.contains(where: { $0.id == profile.id }) &&
                            !outgoingRequests.contains(profile.id) {
                             recommendedFriends.append(profile)
-                            recommendedFriends.sort { $0.username < $1.username }
                         }
                     }
                 }
@@ -514,18 +648,28 @@ struct SocialView: View {
         }
     }
     
-    private func handleCanceledRequest(userID: String) {
-        outgoingRequests.removeAll { $0 == userID }
+    private func acceptFriendRequest(from user: UserProfile) {
+        let db = Firestore.firestore()
+        let currentUserRef = db.collection("users").document(userID)
+        let senderRef = db.collection("users").document(user.id)
         
-        fetchUserProfiles(userIDs: [userID]) { profiles in
-            if let profile = profiles.first {
-                if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
-                   !friends.contains(where: { $0.id == profile.id }) {
-                    recommendedFriends.append(profile)
-                    recommendedFriends.sort { $0.username < $1.username }
+        currentUserRef.updateData(["friends": FieldValue.arrayUnion([user.id])])
+        senderRef.updateData(["friends": FieldValue.arrayUnion([userID])])
+        
+        db.collection("friendRequests")
+            .whereField("senderId", isEqualTo: user.id)
+            .whereField("receiverId", isEqualTo: userID)
+            .getDocuments { snapshot, _ in
+                snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
+                
+                DispatchQueue.main.async {
+                    friendRequests.removeAll { $0.id == user.id }
+                    if !friends.contains(where: { $0.id == user.id }) {
+                        friends.append(user)
+                    }
+                    recommendedFriends.removeAll { $0.id == user.id }
                 }
             }
-        }
     }
 }
     
