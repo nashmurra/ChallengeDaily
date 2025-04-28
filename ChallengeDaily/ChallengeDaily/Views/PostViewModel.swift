@@ -136,7 +136,7 @@ class PostViewModel: ObservableObject {
                                 image: data["image"] as? String ?? "No image",
                                 createdAt: timestamp.dateValue()
                             )
-                            print("📸 Today's Post: \(String(describing: self.todaysPost))")
+                            //print("📸 Today's Post: \(String(describing: self.todaysPost))")
                         }
                     } else {
                         print("❌ No post made today by the user.")
