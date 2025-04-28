@@ -78,6 +78,12 @@ struct MainView: View {
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
                                 .italic()
+                            
+                            Text(currentChallenge.hint)
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.white)
+                                .italic()
                         }
                         .padding()
                         .background(
