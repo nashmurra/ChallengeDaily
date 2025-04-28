@@ -71,6 +71,7 @@ struct SettingsView: View {
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                         withAnimation {
                                             userID = ""
+                                            presentationMode.wrappedValue.dismiss() // Dismiss after setting userID
                                         }
                                     }
                                 } catch let signOutError as NSError {

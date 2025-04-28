@@ -6,6 +6,8 @@ struct MainView: View {
     @StateObject private var postViewModel = PostViewModel()
     private let userViewModel = UserViewModel.shared
     
+    @AppStorage("uid") var userID: String = ""
+    
     @State private var timeRemaining = 0
     @State private var showCamera: Bool = false
     @State private var selectedImage: UIImage? = nil
@@ -166,9 +168,11 @@ struct MainView: View {
                 }
             }
             .onAppear {
-                currentChallengeViewmodel.fetchUserChallenges()
-                postViewModel.fetchTodaysPost()
-                updateCountdown()
+                if !userID.isEmpty {
+                    currentChallengeViewmodel.fetchUserChallenges()
+                    postViewModel.fetchTodaysPost()
+                    updateCountdown()
+                }
             }
             .onReceive(timer) { _ in
                 if timeRemaining > 0 {
