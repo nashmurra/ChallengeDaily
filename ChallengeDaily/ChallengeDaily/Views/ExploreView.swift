@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ExploreView: View {
     @StateObject private var postViewModel = PostViewModel()
+    @AppStorage("uid") var userID: String = ""
     
     var body: some View {
         NavigationStack {
@@ -41,7 +42,9 @@ struct ExploreView: View {
             .navigationTitle("Explore")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
-                postViewModel.fetchPosts()
+                if !userID.isEmpty {
+                    postViewModel.fetchPosts()
+                }
             }
         }
     }

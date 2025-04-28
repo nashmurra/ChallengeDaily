@@ -766,9 +766,11 @@ struct UserProfileView: View {
                 Text("You can't view \(username)'s account because it's private.")
             }
             .onAppear {
-                fetchUserProfile()
-                checkFriendshipStatus()
-                postViewModel.fetchPostsForUser(userID: userID)
+                if !currentUserID.isEmpty {
+                    fetchUserProfile()
+                    checkFriendshipStatus()
+                    postViewModel.fetchPostsForUser(userID: userID)
+                }
             }
         }
     }

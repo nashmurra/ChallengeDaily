@@ -97,7 +97,9 @@ struct ProfileView: View {
                 ImagePicker(selectedImage: $selectedImage)
             }
             .onAppear {
-                loadProfileData()
+                if !userID.isEmpty {
+                    loadProfileData()
+                }
             }
         }
     }
