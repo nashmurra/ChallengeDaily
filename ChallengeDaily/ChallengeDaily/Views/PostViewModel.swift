@@ -4,7 +4,7 @@ import Combine
 
 class PostViewModel: ObservableObject {
     @Published var viewModelPosts: [Post] = []
-    var userViewModel = UserViewModel()
+    private let userViewModel = UserViewModel.shared
 
     func fetchPosts() {
         let db = Firestore.firestore()

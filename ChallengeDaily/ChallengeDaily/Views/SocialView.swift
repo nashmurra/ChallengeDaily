@@ -24,7 +24,7 @@ struct SocialView: View {
     @State private var recommendedFriends: [UserProfile] = []
     @State private var outgoingRequests: [String] = []
     @AppStorage("uid") var userID: String = ""
-    @StateObject var userViewModel = UserViewModel()
+    private let userViewModel = UserViewModel.shared
     @State private var showPrivateProfileAlert = false
     @State private var privateProfileUsername = ""
     @State private var selectedUserID = ""
@@ -61,6 +61,7 @@ struct SocialView: View {
                     }
                     .padding(.bottom, 40)
                 }
+                .padding(.bottom, 30)
             }
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)

@@ -17,13 +17,13 @@ struct ContentView: View {
 
     init() {
         UITabBar.appearance().backgroundColor = UIColor(Color.white)
-        UITabBar.appearance().unselectedItemTintColor = UIColor(Color.darkBlueColor) // Set disabled tabs to red
+        UITabBar.appearance().unselectedItemTintColor = UIColor(Color.darkBlueColor)
     }
     
-    var mainView = MainView()
+    var mainView = ChallengeDashboardView()
     var socialView = SocialView()
-    var settingsView = SettingsView()
-    var challengeView = ChallengeDashboardView()
+    var exploreView = ExploreView()
+    //var challengeView = ChallengeDashboardView()
     var profileView = ProfileView()
 
 
@@ -47,19 +47,14 @@ struct ContentView: View {
                                 Label("Home", systemImage: "house.fill")
                             }
 
-                        socialView
-                            .tabItem {
-                                Label("Friends", systemImage: "shared.with.you")
-                            }
-
-                        settingsView
+                        exploreView
                             .tabItem {
                                 Label("Explore", systemImage: "target")
                             }
-
-                        challengeView
+                        
+                        socialView
                             .tabItem {
-                                Label("Challenge", systemImage: "star.fill")
+                                Label("Friends", systemImage: "shared.with.you")
                             }
 
                         profileView

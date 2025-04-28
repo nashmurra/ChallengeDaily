@@ -10,7 +10,7 @@ import FirebaseAuth
 import StoreKit
 
 struct SettingsView: View {
-    @StateObject var userViewModel = UserViewModel()
+    private let userViewModel = UserViewModel.shared
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
     @State private var showPreferences = false

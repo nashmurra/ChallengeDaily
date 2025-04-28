@@ -15,6 +15,11 @@ struct LoginView: View {
     // Alert for password reset
     @State private var showAlert = false
     @State private var alertMessage = ""
+    
+    private var canSignIn: Bool {
+        return !email.isEmpty && email.contains("@") && isValidPassword(password)
+    }
+
 
     private func isValidPassword(_ password: String) -> Bool {
         let passwordRegex = NSPredicate(
@@ -179,22 +184,23 @@ struct LoginView: View {
                             }
                         } label: {
                             Text("Sign In")
-                                .foregroundColor(Color.black).opacity(0.6)
+                                .foregroundColor(canSignIn ? Color.black.opacity(0.6) : Color.white.opacity(0.6))
                                 .font(.subheadline)
                                 .fontWeight(.bold)
                                 .frame(maxWidth: .infinity)
                                 .padding(17)
                                 .background(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [
-                                            Color.tealColor, Color.greenColor,
-                                        ]),
+                                        gradient: Gradient(colors: canSignIn ? [Color.tealColor, Color.greenColor] : [Color.gray, Color.gray]),
                                         startPoint: .leading,
-                                        endPoint: .trailing)
+                                        endPoint: .trailing
+                                    )
                                 )
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .padding(.horizontal, 100)
                         }
+                        .disabled(!canSignIn)
+
                     }
 
                     Spacer().frame(height: 100)

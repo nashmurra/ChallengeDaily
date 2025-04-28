@@ -14,7 +14,7 @@ struct MainView: View {
     
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
     @StateObject private var postViewModel = PostViewModel()
-    @StateObject private var userViewModel = UserViewModel()
+    private let userViewModel = UserViewModel.shared
     @State var currentChallenge: Challenge?
 
     @Namespace var namespace
@@ -54,17 +54,17 @@ struct MainView: View {
 
                     // Avatar centered
                     if let currentChallenge = currentChallenge {
-                        Image(systemName: currentChallenge.icon)
-                            .resizable()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(Color.white)
-                            .padding(12)
-                            .aspectRatio(contentMode: .fit)
-                            .background(
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .shadow(radius: 5)
-                            )
+                        ZStack {
+                            Circle()
+                                .stroke(Color.white, lineWidth: 9)
+                                .frame(width: 140, height: 140)
+
+                            Image(systemName: currentChallenge.icon)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 60, height: 60)
+                                .foregroundColor(Color.white)
+                        }
                         
                         
                         // Challenge title + type
@@ -161,9 +161,10 @@ struct MainView: View {
                 }
             }
             .onAppear {
+                //currentChallengeViewmodel.fetchUserChallenges()
                 updateCountdown()
                 setCurrentChallenge()
-                postViewModel.fetchPosts()
+                //postViewModel.fetchPosts()
             }
             .onReceive(timer) { _ in
                 if timeRemaining > 0 {

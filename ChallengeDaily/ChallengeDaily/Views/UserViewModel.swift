@@ -6,7 +6,11 @@ import FirebaseFirestore
 
 class UserViewModel: ObservableObject {
 
-    @Published private var currentChallengeViewmodel = ChallengeViewModel()
+    //@Published private var currentChallengeViewmodel = ChallengeViewModel()
+    static let shared = UserViewModel()   // ✅ shared instance
+
+    private init() {}
+    
     @Published var username: String = ""
     @Published var email: String = ""
     @Published var darkMode: Bool = false
@@ -129,22 +133,19 @@ class UserViewModel: ObservableObject {
 
         let db = Firestore.firestore()
         db.collection("users").document(userID)
-            .setData(
-                [
-                    "currentChallenge": challenge.challengeID
-
-                ], merge: true
-            ) { error in
+            .setData([
+                "currentChallenge": challenge.challengeID
+            ], merge: true) { error in
                 if let error = error {
-                    print(
-                        "Error setting user challenge: \(error.localizedDescription)"
-                    )
+                    print("Error setting user challenge: \(error.localizedDescription)")
                 } else {
-                    print(
-                        "User challenge set successfully!"
-                    )
+                    DispatchQueue.main.async {
+                        self.currentChallengeID = challenge.challengeID
+                    }
+                    print("User challenge set successfully!")
                 }
             }
     }
+
 
 }

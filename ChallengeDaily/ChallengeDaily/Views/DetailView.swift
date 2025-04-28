@@ -10,7 +10,7 @@ struct DetailView: View {
     var backgroundColor: Color  // New parameter for background color
     var currentChallenge: Challenge
     
-    @StateObject private var userViewModel = UserViewModel()
+    private let userViewModel = UserViewModel.shared
     
     @Environment(\.presentationMode) var presentationMode  // To control navigation back
 

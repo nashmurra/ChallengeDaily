@@ -6,6 +6,9 @@ class ChallengeViewModel: ObservableObject {
     @Published var dailyChallenges: [Challenge] = []
     @Published var currentChallenge: Challenge? // Stores the active challenge
     
+    private let userViewModel = UserViewModel.shared
+
+    
     private let db = Firestore.firestore()
     
     func fetchUserChallenges() {
@@ -48,20 +51,24 @@ class ChallengeViewModel: ObservableObject {
             }
 
             let allChallenges = snapshot?.documents.map { $0.documentID } ?? []
-            let randomChallenges = allChallenges.shuffled().prefix(4) // Pick 4 random
+            guard let randomChallenge = allChallenges.randomElement() else {
+                print("No challenges available to assign.")
+                return
+            }
 
             userRef.updateData([
-                "challenges": Array(randomChallenges),
+                "challenges": [randomChallenge],
                 "lastUpdated": self.getFormattedDate()
             ]) { error in
                 if let error = error {
                     print("Error updating user challenges: \(error.localizedDescription)")
                     return
                 }
-                self.fetchChallengesByIDs(Array(randomChallenges))
+                self.fetchChallengesByIDs([randomChallenge])
             }
         }
     }
+
 
     private func fetchChallengesByIDs(_ challengeIDs: [String]) {
         let challengeRefs = challengeIDs.map { db.collection("challenges").document($0) }
@@ -93,8 +100,13 @@ class ChallengeViewModel: ObservableObject {
 
         group.notify(queue: .main) {
             self.dailyChallenges = fetchedChallenges
-            self.currentChallenge = fetchedChallenges.randomElement()
+            if let challenge = fetchedChallenges.randomElement() {
+                self.currentChallenge = challenge
+                // Auto-accept the challenge
+                self.userViewModel.setCurrentChallenge(challenge: challenge)
+            }
         }
+
     }
     
     func fetchChallengeByID(_ challengeID: String, completion: @escaping (Challenge?) -> Void) {

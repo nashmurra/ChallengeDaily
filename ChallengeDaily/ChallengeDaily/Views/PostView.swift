@@ -8,7 +8,7 @@ struct PostView: View {
     @State private var navigateToMain = false  // State to trigger navigation
     
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
-    @StateObject private var userViewModel = UserViewModel()
+    private let userViewModel = UserViewModel.shared
     
     var body: some View {
         VStack(spacing: 16) {

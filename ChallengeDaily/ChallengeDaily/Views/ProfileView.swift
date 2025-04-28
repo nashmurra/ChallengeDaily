@@ -63,6 +63,7 @@ struct ProfileView: View {
                     }
                     .padding(.bottom, 20)
                 }
+                .padding(.bottom, 30)
             }
             .overlay(
                 VStack {
