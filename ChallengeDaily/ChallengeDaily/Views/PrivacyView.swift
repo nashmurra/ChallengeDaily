@@ -11,14 +11,11 @@ import Contacts
 
 struct PrivacyView: View {
     @Environment(\.presentationMode) var presentationMode
-    @State private var isPrivate: Bool = false
-    @State private var findFriendsWithContacts: Bool = false
-    @State private var showingContactsPermissionAlert = false
-    @State private var contactsPermissionDenied = false
-    @State private var isLoading: Bool = false
-    var userID: String
+    @StateObject private var viewModel: PrivacyViewModel
     
-    private let contactStore = CNContactStore()
+    init(userID: String) {
+        _viewModel = StateObject(wrappedValue: PrivacyViewModel(userID: userID))
+    }
     
     var body: some View {
         NavigationStack {
@@ -37,7 +34,7 @@ struct PrivacyView: View {
                         .padding(.top, 60)
                     
                     VStack(spacing: 15) {
-                        Toggle(isOn: $isPrivate) {
+                        Toggle(isOn: $viewModel.isPrivate) {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("Private Account")
                                     .font(.title3)
@@ -53,11 +50,11 @@ struct PrivacyView: View {
                         .background(Color.black.opacity(0.6))
                         .cornerRadius(12)
                         .padding(.horizontal)
-                        .onChange(of: isPrivate) { _ in
-                            savePrivacySettings()
+                        .onChange(of: viewModel.isPrivate) { _ in
+                            viewModel.savePrivacySettings()
                         }
                     
-                        Toggle(isOn: $findFriendsWithContacts) {
+                        Toggle(isOn: $viewModel.findFriendsWithContacts) {
                             VStack(alignment: .leading, spacing: 5) {
                                 Text("Find Friends with Contacts")
                                     .font(.title3)
@@ -73,16 +70,16 @@ struct PrivacyView: View {
                         .background(Color.black.opacity(0.6))
                         .cornerRadius(12)
                         .padding(.horizontal)
-                        .disabled(isLoading)
-                        .onChange(of: findFriendsWithContacts) { newValue in
-                            handleContactsToggle(newValue: newValue)
+                        .disabled(viewModel.isLoading)
+                        .onChange(of: viewModel.findFriendsWithContacts) { newValue in
+                            viewModel.handleContactsToggle(newValue: newValue)
                         }
                     }
                     
                     Spacer()
                 }
                 
-                if isLoading {
+                if viewModel.isLoading {
                     ProgressView()
                         .scaleEffect(1.5)
                         .tint(.white)
@@ -105,105 +102,27 @@ struct PrivacyView: View {
                 }
             }
         }
-        .alert("Contacts Access Required", isPresented: $showingContactsPermissionAlert) {
+        .alert("Contacts Access Required", isPresented: $viewModel.showingContactsPermissionAlert) {
             Button("Cancel", role: .cancel) {
-                findFriendsWithContacts = false
+                viewModel.findFriendsWithContacts = false
+                viewModel.savePrivacySettings()
             }
             Button("Open Settings") {
-                openAppSettings()
+                viewModel.openAppSettings()
             }
         } message: {
             Text("To find friends from your contacts, please enable access in Settings.")
         }
-        .alert("Contacts Access Denied", isPresented: $contactsPermissionDenied) {
+        .alert("Contacts Access Denied", isPresented: $viewModel.contactsPermissionDenied) {
             Button("OK", role: .cancel) {
-                findFriendsWithContacts = false
+                viewModel.findFriendsWithContacts = false
+                viewModel.savePrivacySettings()
             }
             Button("Settings", role: .none) {
-                openAppSettings()
+                viewModel.openAppSettings()
             }
         } message: {
             Text("You've denied contacts access. You can enable it in Settings if you change your mind.")
         }
-        .onAppear {
-            loadPrivacySettings()
-        }
-    }
-    
-    private func handleContactsToggle(newValue: Bool) {
-        if newValue {
-            requestContactsAccess()
-        } else {
-            savePrivacySettings()
-        }
-    }
-    
-    private func requestContactsAccess() {
-        isLoading = true
-        
-        contactStore.requestAccess(for: .contacts) { [self] granted, error in
-            DispatchQueue.main.async {
-                isLoading = false
-                
-                if granted {
-                    savePrivacySettings()
-                } else {
-                    findFriendsWithContacts = false
-                    let status = CNContactStore.authorizationStatus(for: .contacts)
-                    
-                    if status == .denied || status == .restricted {
-                        contactsPermissionDenied = true
-                    } else {
-                        showingContactsPermissionAlert = true
-                    }
-                }
-            }
-        }
-    }
-    
-    private func openAppSettings() {
-        guard let settingsUrl = URL(string: UIApplication.openSettingsURLString),
-              UIApplication.shared.canOpenURL(settingsUrl) else {
-            return
-        }
-        
-        UIApplication.shared.open(settingsUrl)
-    }
-    
-    private func loadPrivacySettings() {
-        isLoading = true
-        
-        let db = Firestore.firestore()
-        db.collection("users").document(userID).getDocument { [self] document, error in
-            isLoading = false
-            
-            guard let document = document, document.exists,
-                  let data = document.data() else {
-                return
-            }
-            
-            isPrivate = data["isPrivate"] as? Bool ?? false
-            let contactsEnabled = data["findFriendsWithContacts"] as? Bool ?? false
-            if contactsEnabled {
-                checkContactsAuthorization { authorized in
-                    findFriendsWithContacts = authorized
-                }
-            } else {
-                findFriendsWithContacts = false
-            }
-        }
-    }
-    
-    private func checkContactsAuthorization(completion: @escaping (Bool) -> Void) {
-        let status = CNContactStore.authorizationStatus(for: .contacts)
-        completion(status == .authorized)
-    }
-    
-    private func savePrivacySettings() {
-        let db = Firestore.firestore()
-        db.collection("users").document(userID).setData([
-            "isPrivate": isPrivate,
-            "findFriendsWithContacts": findFriendsWithContacts
-        ], merge: true)
     }
 }

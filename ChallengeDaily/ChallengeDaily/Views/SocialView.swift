@@ -477,11 +477,14 @@ struct SocialView: View {
         let db = Firestore.firestore()
         friendListener = db.collection("users").document(userID).addSnapshotListener { document, _ in
             if let document = document, let data = document.data(), let friendIDs = data["friends"] as? [String] {
-                fetchUserProfiles(userIDs: friendIDs) { self.friends = $0 }
+                fetchUserProfiles(userIDs: friendIDs) {
+                    self.friends = $0
+                    self.recommendedFriends.removeAll { friendIDs.contains($0.id) }
+                }
             }
         }
     }
-    
+
     private func setupFriendRequestListener() {
         let db = Firestore.firestore()
         requestListener = db.collection("friendRequests")
@@ -489,8 +492,9 @@ struct SocialView: View {
             .whereField("status", isEqualTo: "pending")
             .addSnapshotListener { snapshot, _ in
                 let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
-                fetchUserProfiles(userIDs: senderIDs) { users in
-                    self.friendRequests = users
+                fetchUserProfiles(userIDs: senderIDs) {
+                    self.friendRequests = $0
+                    self.loadRecommendedFriends() // Refresh to include these in recommendations
                 }
             }
         
@@ -499,6 +503,7 @@ struct SocialView: View {
             .whereField("status", isEqualTo: "pending")
             .addSnapshotListener { snapshot, _ in
                 self.outgoingRequests = snapshot?.documents.compactMap { $0.data()["receiverId"] as? String } ?? []
+                self.loadRecommendedFriends()
             }
     }
     
@@ -536,8 +541,15 @@ struct SocialView: View {
                         phoneNumber: data["phoneNumber"] as? String
                     )
                 }
+                
                 let friendIDs = Set(self.friends.map { $0.id })
-                self.recommendedFriends = users.filter { !friendIDs.contains($0.id) }
+                let outgoingRequestIDs = Set(self.outgoingRequests)
+                
+                self.recommendedFriends = users.filter { user in
+                    !friendIDs.contains(user.id) &&
+                    !outgoingRequestIDs.contains(user.id)
+                }.sorted { $0.username < $1.username }
+                
                 self.checkContactsPermission()
             }
         }
@@ -611,24 +623,19 @@ struct SocialView: View {
                     "timestamp": Timestamp(date: Date())
                 ]
                 
-                db.collection("friendRequests").addDocument(data: requestData) { error in
-                    if error == nil {
-                        outgoingRequests.append(user.id)
-                        recommendedFriends.removeAll { $0.id == user.id }
-                    }
-                }
+                db.collection("friendRequests").addDocument(data: requestData)
             }
     }
     
     private func removeFriend(friendID: String) {
         let db = Firestore.firestore()
         let batch = db.batch()
-        
+
         let currentUserRef = db.collection("users").document(userID)
         batch.updateData([
             "friends": FieldValue.arrayRemove([friendID])
         ], forDocument: currentUserRef)
-        
+
         let friendRef = db.collection("users").document(friendID)
         batch.updateData([
             "friends": FieldValue.arrayRemove([userID])
@@ -637,15 +644,29 @@ struct SocialView: View {
         batch.commit { error in
             if error == nil {
                 friends.removeAll { $0.id == friendID }
+
                 fetchUserProfiles(userIDs: [friendID]) { profiles in
                     if let profile = profiles.first {
-                        if !recommendedFriends.contains(where: { $0.id == profile.id }) &&
-                           !friendRequests.contains(where: { $0.id == profile.id }) &&
-                           !outgoingRequests.contains(profile.id) {
-                            recommendedFriends.append(profile)
+                        if !self.recommendedFriends.contains(where: { $0.id == profile.id }) &&
+                           !self.friendRequests.contains(where: { $0.id == profile.id }) &&
+                           !self.outgoingRequests.contains(profile.id) {
+                            
+                            DispatchQueue.main.async {
+                                self.recommendedFriends.append(profile)
+                                self.recommendedFriends.sort { $0.username < $1.username }
+                            }
                         }
                     }
                 }
+
+                db.collection("friendRequests")
+                    .whereField("senderId", in: [userID, friendID])
+                    .whereField("receiverId", in: [userID, friendID])
+                    .getDocuments { snapshot, _ in
+                        snapshot?.documents.forEach { $0.reference.delete() }
+                    }
+            } else {
+                print("Error removing friend: \(error!.localizedDescription)")
             }
         }
     }
