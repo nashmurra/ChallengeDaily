@@ -2,30 +2,20 @@ import SwiftUI
 import PhotosUI
 
 struct MainView: View {
-    @State private var showProfile = false
-    @State private var showSocial = false
-    @State private var timeRemaining = 0
-    @State var showCamera: Bool = false
-    @State private var selectedImage: UIImage? = nil
-    @State private var navigateToPostView: Bool = false
-
-    @State private var selectedView: String = "Dashboard"
-    
-    
     @StateObject private var currentChallengeViewmodel = ChallengeViewModel()
     @StateObject private var postViewModel = PostViewModel()
     private let userViewModel = UserViewModel.shared
-    @State var currentChallenge: Challenge?
-
-    @Namespace var namespace
-    @State var show = false
-
+    
+    @State private var timeRemaining = 0
+    @State private var showCamera: Bool = false
+    @State private var selectedImage: UIImage? = nil
+    @State private var navigateToPostView: Bool = false
+    
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
                 Image("appBackground")
                     .resizable()
                     .scaledToFill()
@@ -52,8 +42,8 @@ struct MainView: View {
 
                     Spacer().frame(height: 40)
 
-                    // Avatar centered
-                    if let currentChallenge = currentChallenge {
+                    // Current challenge
+                    if let currentChallenge = currentChallengeViewmodel.currentChallenge {
                         ZStack {
                             Circle()
                                 .stroke(Color.white, lineWidth: 9)
@@ -65,9 +55,7 @@ struct MainView: View {
                                 .frame(width: 60, height: 60)
                                 .foregroundColor(Color.white)
                         }
-                        
-                        
-                        // Challenge title + type
+
                         VStack(spacing: 4) {
                             Text(currentChallenge.title)
                                 .font(.title)
@@ -81,131 +69,126 @@ struct MainView: View {
                             Divider().frame(width: 180).background(.white.opacity(0.2))
                         }
                         .padding(.top, 16)
-                        
-                        // Challenge card
+
                         VStack(alignment: .center, spacing: 12) {
-                            //                        Text("Walk up to a stranger and say:")
-                            //                            .font(.callout)
-                            //                            .foregroundColor(.white.opacity(0.7))
-                            
                             Text(currentChallenge.instructions)
                                 .font(.body)
                                 .fontWeight(.medium)
                                 .foregroundColor(.white)
                                 .italic()
-                            
-                            //                        Text("Then walk away.")
-                            //                            .font(.callout)
-                            //                            .foregroundColor(.white.opacity(0.7))
                         }
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 25)
                                 .fill(.ultraThinMaterial)
-                                .blur(radius: 0.5)
                                 .shadow(color: .black.opacity(0.2), radius: 15, x: 0, y: 10)
                         )
                         .padding(.horizontal, 30)
                         .padding(.top, 20)
                     }
 
-                    // Post Button
-                    Button(action: {
-                        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+                    Spacer()
+
+                    // Now check if user has posted today
+                    if let todaysPost = postViewModel.todaysPost {
+                        // User has posted today
+                        VStack(spacing: 20) {
+                            Text("You Posted Today! 🎉")
+                                .font(.headline)
+                                .foregroundColor(.white)
+
+                            if let imageData = Data(base64Encoded: todaysPost.image),
+                               let image = UIImage(data: imageData) {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: 300)
+                                    .cornerRadius(20)
+                                    .shadow(radius: 10)
+                            }
+
+//                            Text(todaysPost.caption)
+//                                .foregroundColor(.white.opacity(0.8))
+//                                .italic()
+//                                .padding(.horizontal)
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 25)
+                                .fill(.ultraThinMaterial)
+                                .shadow(radius: 10)
+                        )
+                        .padding(.horizontal, 30)
+                        .padding(.bottom, 40)
+
+                    } else {
+                        // User has NOT posted yet
+                        Button(action: {
+                            guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
                                 print("❌ Camera not available.")
                                 return
                             }
-                    }) {
-                        Text("Make a Post")
-                            .foregroundColor(.black)
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(
-                                LinearGradient(colors: [Color.white, Color.white.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                            )
-                            .shadow(radius: 10)
+                            showCamera = true
+                        }) {
+                            Text("Make a Post")
+                                .foregroundColor(.black)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(
+                                    LinearGradient(colors: [Color.white, Color.white.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                )
+                                .shadow(radius: 10)
+                        }
+                        .padding(.horizontal, 80)
+                        .padding(.top, 30)
                     }
-                    .padding(.horizontal, 80)
-                    .padding(.top, 30)
 
                     Spacer()
                 }
-                .frame(maxWidth: .infinity)
                 .padding(.horizontal)
             }
-            .ignoresSafeArea(edges: .top)
             .sheet(isPresented: $showCamera) {
                 CameraView(selectedImage: $selectedImage)
-                    //.preferredColorScheme(.dark)
                     .onDisappear {
-                        guard let _ = selectedImage else {
-                            print("❌ No image was selected.")
-                            return
-                        }
-                        
-                        DispatchQueue.main.async {
+                        if selectedImage != nil {
                             navigateToPostView = true
                         }
                     }
-
             }
             .navigationDestination(isPresented: $navigateToPostView) {
                 if let image = selectedImage {
                     PostView(image: image)
-                        //.preferredColorScheme(.dark)
                 } else {
                     Text("⚠️ No image available")
                 }
             }
             .onAppear {
-                //currentChallengeViewmodel.fetchUserChallenges()
+                currentChallengeViewmodel.fetchUserChallenges()
+                postViewModel.fetchTodaysPost()
                 updateCountdown()
-                setCurrentChallenge()
-                //postViewModel.fetchPosts()
             }
             .onReceive(timer) { _ in
                 if timeRemaining > 0 {
                     timeRemaining -= 1
                 } else {
+                    // New day detected
+                    currentChallengeViewmodel.fetchUserChallenges()
+                    postViewModel.fetchTodaysPost()
                     updateCountdown()
                 }
             }
-            .padding(.trailing, 30)
         }
     }
     
-    func setCurrentChallenge() {
-        userViewModel.fetchUserChallengeID { challengeID in
-            guard let challengeID = challengeID else {
-                print("❌ No current challenge ID.")
-                return
-            }
-
-            print("User's current challenge ID: \(challengeID)")
-
-            currentChallengeViewmodel.fetchChallengeByID(challengeID) { challenge in
-                guard let challenge = challenge else {
-                    print("❌ Challenge with ID \(challengeID) not found.")
-                    return
-                }
-
-                DispatchQueue.main.async {
-                    self.currentChallenge = challenge
-                }
-                print("✅ Fetched challenge: \(challenge.title)")
-            }
-        }
-    }
-
     func updateCountdown() {
         let now = Date()
         let calendar = Calendar.current
         var components = calendar.dateComponents([.year, .month, .day], from: now)
         
-        components.hour = 3
+        components.hour = 0
         components.minute = 0
         components.second = 0
 
@@ -213,7 +196,7 @@ struct MainView: View {
         let offset = timezone.secondsFromGMT()
 
         guard let todayReset = calendar.date(from: components) else {
-            print("❌ Failed to calculate reset time from components.")
+            print("❌ Failed to calculate reset time.")
             return
         }
 
@@ -231,19 +214,4 @@ struct MainView: View {
         let timeDifference = utcResetDate.timeIntervalSince(now)
         timeRemaining = max(0, Int(timeDifference))
     }
-
-
-
-
-    func timeString(from seconds: Int) -> String {
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
-        let seconds = seconds % 60
-        return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-    }
-}
-
-#Preview {
-    MainView()
-        .preferredColorScheme(.dark)
 }

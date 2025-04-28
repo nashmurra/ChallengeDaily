@@ -27,7 +27,7 @@ struct ExploreView: View {
                 
                 ScrollView(showsIndicators: false) {
                     LazyVStack(spacing: 20) {
-                        ForEach(postViewModel.viewModelPosts) { post in
+                        ForEach(postViewModel.viewModelPosts.sorted { $0.createdAt > $1.createdAt }) { post in
                             NavigationLink(destination: PostDetailView(post: post)) {
                                 FeedPostCard(post: post)
                                     .padding(.horizontal)
@@ -36,6 +36,7 @@ struct ExploreView: View {
                     }
                     .padding(.top)
                 }
+                .padding(.bottom, 20)
             }
             .navigationTitle("Explore")
             .navigationBarTitleDisplayMode(.large)

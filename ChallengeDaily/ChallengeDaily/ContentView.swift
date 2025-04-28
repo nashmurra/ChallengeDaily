@@ -20,7 +20,7 @@ struct ContentView: View {
         UITabBar.appearance().unselectedItemTintColor = UIColor(Color.darkBlueColor)
     }
     
-    var mainView = ChallengeDashboardView()
+    var mainView = MainView()
     var socialView = SocialView()
     var exploreView = ExploreView()
     //var challengeView = ChallengeDashboardView()

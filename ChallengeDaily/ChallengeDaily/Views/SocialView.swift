@@ -29,8 +29,7 @@ struct SocialView: View {
     @State private var contactsMatched: [String] = []
     @State private var isLoadingContacts = false
     @AppStorage("uid") var userID: String = ""
-    //private let userViewModel = UserViewModel.shared
-    @StateObject userViewModel = new UserViewModel()
+    private let userViewModel = UserViewModel.shared
     @State private var showPrivateProfileAlert = false
     @State private var privateProfileUsername = ""
     @State private var selectedUserID = ""
@@ -347,16 +346,14 @@ struct SocialView: View {
                     }
                     .padding(.bottom, 40)
                 }
-<<<<<<< HEAD
                 .padding(.bottom, 30)
-=======
                 
                 if isLoadingContacts {
                     ProgressView()
                         .scaleEffect(1.5)
                         .tint(.white)
                 }
->>>>>>> c735d23e3f46a9d36620ed2861f242dec0070967
+
             }
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)

@@ -4,8 +4,10 @@ import Combine
 
 class PostViewModel: ObservableObject {
     @Published var viewModelPosts: [Post] = []
+    @Published var todaysPost: Post? = nil
     private let userViewModel = UserViewModel.shared
 
+    // Fetch all posts for the feed
     func fetchPosts() {
         let db = Firestore.firestore()
         db.collection("feed")
@@ -47,9 +49,8 @@ class PostViewModel: ObservableObject {
                 }
             }
     }
-    
-    
 
+    // Fetch all posts for a specific user
     func fetchPostsForUser(userID: String) {
         let db = Firestore.firestore()
         db.collection("feed")
@@ -91,4 +92,56 @@ class PostViewModel: ObservableObject {
                 }
             }
     }
+    
+    // Fetch the post made by the user today
+    func fetchTodaysPost() {
+            guard let uid = Auth.auth().currentUser?.uid else {
+                print("❌ No user logged in")
+                return
+            }
+            
+            // Get the start of the current day (midnight)
+            let startOfDay = Calendar.current.startOfDay(for: Date())
+            print("🔍 Start of Day: \(startOfDay)")
+            
+            let db = Firestore.firestore()
+            db.collection("feed")
+                .whereField("userID", isEqualTo: uid)
+                .whereField("createdAt", isGreaterThanOrEqualTo: Timestamp(date: startOfDay)) // Filtering by today's posts
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        print("❌ Error fetching today's post: \(error.localizedDescription)")
+                        return
+                    }
+                    
+                    guard let documents = snapshot?.documents else {
+                        print("❌ No posts found for today.")
+                        self.todaysPost = nil
+                        return
+                    }
+                    
+                    // Check if there's a document from today
+                    if let document = documents.first {
+                        let data = document.data()
+                        let timestamp = data["createdAt"] as? Timestamp ?? Timestamp()
+                        print("🔍 Post Timestamp: \(timestamp.dateValue())")
+                        
+                        // Fetch the username and other post details
+                        self.userViewModel.fetchUserByID(userID: uid) { user in
+                            let username = user?.username ?? "Unknown User"
+
+                            self.todaysPost = Post(
+                                username: username,
+                                challengeName: data["challengeName"] as? String ?? "No challenge",
+                                image: data["image"] as? String ?? "No image",
+                                createdAt: timestamp.dateValue()
+                            )
+                            print("📸 Today's Post: \(String(describing: self.todaysPost))")
+                        }
+                    } else {
+                        print("❌ No post made today by the user.")
+                        self.todaysPost = nil
+                    }
+                }
+        }
 }
