@@ -125,7 +125,7 @@ struct FriendRequestsView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.green)
+                        .background(Color.greenColor)
                         .cornerRadius(8)
                 }
                 
@@ -136,7 +136,7 @@ struct FriendRequestsView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.red)
+                        .background(Color.pinkColor)
                         .cornerRadius(8)
                 }
             } else {
@@ -147,7 +147,7 @@ struct FriendRequestsView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.red)
+                        .background(Color.pinkColor)
                         .cornerRadius(8)
                 }
             }

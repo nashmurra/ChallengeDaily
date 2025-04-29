@@ -220,7 +220,7 @@ struct SocialView: View {
                                                     .foregroundColor(.white)
                                                     .padding(.horizontal, 12)
                                                     .padding(.vertical, 6)
-                                                    .background(Color.green)
+                                                    .background(Color.greenColor)
                                                     .cornerRadius(8)
                                             }
                                         } else if outgoingRequests.contains(profile.id) {
@@ -234,7 +234,7 @@ struct SocialView: View {
                                                 Image(systemName: "plus.circle.fill")
                                                     .resizable()
                                                     .frame(width: 24, height: 24)
-                                                    .foregroundColor(.pink)
+                                                    .foregroundColor(Color.pinkColor)
                                             }
                                         }
                                     }
