@@ -42,8 +42,7 @@ struct SocialView: View {
     
     var filteredProfiles: [UserProfile] {
         let filtered = searchText.isEmpty ? recommendedFriends :
-                     recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
-        
+        recommendedFriends.filter { $0.username.lowercased().contains(searchText.lowercased()) }
         return filtered.sorted {
             if $0.isContact == $1.isContact {
                 return $0.username < $1.username
@@ -153,17 +152,6 @@ struct SocialView: View {
                                     }
                                     .padding(.horizontal)
                                 }
-                            }
-                            
-                            // Contacts Section
-                            if !contactsMatched.isEmpty {
-                                Text("Contacts")
-                                    .font(.title)
-                                    .foregroundColor(.white)
-                                    .fontWeight(.bold)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal)
-                                    .padding(.top, 10)
                             }
                             
                             // Recommended Friends
@@ -353,7 +341,7 @@ struct SocialView: View {
                         .scaleEffect(1.5)
                         .tint(.white)
                 }
-
+                
             }
             .navigationBarBackButtonHidden(true)
             .navigationBarTitleDisplayMode(.inline)
@@ -449,6 +437,7 @@ struct SocialView: View {
                 }
                 
                 DispatchQueue.main.async {
+                    // Update the recommended friends with contact info
                     self.recommendedFriends = self.recommendedFriends.map { user in
                         var user = user
                         if let phone = user.phoneNumber {
@@ -460,6 +449,15 @@ struct SocialView: View {
                         }
                         return user
                     }
+                    
+                    // Sort the list with contacts first
+                    self.recommendedFriends.sort {
+                        if $0.isContact == $1.isContact {
+                            return $0.username < $1.username
+                        }
+                        return $0.isContact && !$1.isContact
+                    }
+                    
                     self.isLoadingContacts = false
                 }
             } catch {
@@ -484,7 +482,7 @@ struct SocialView: View {
             }
         }
     }
-
+    
     private func setupFriendRequestListener() {
         let db = Firestore.firestore()
         requestListener = db.collection("friendRequests")
@@ -545,10 +543,16 @@ struct SocialView: View {
                 let friendIDs = Set(self.friends.map { $0.id })
                 let outgoingRequestIDs = Set(self.outgoingRequests)
                 
+                // Filter and sort with contacts first
                 self.recommendedFriends = users.filter { user in
                     !friendIDs.contains(user.id) &&
                     !outgoingRequestIDs.contains(user.id)
-                }.sorted { $0.username < $1.username }
+                }.sorted {
+                    if $0.isContact == $1.isContact {
+                        return $0.username < $1.username
+                    }
+                    return $0.isContact && !$1.isContact
+                }
                 
                 self.checkContactsPermission()
             }
@@ -630,12 +634,12 @@ struct SocialView: View {
     private func removeFriend(friendID: String) {
         let db = Firestore.firestore()
         let batch = db.batch()
-
+        
         let currentUserRef = db.collection("users").document(userID)
         batch.updateData([
             "friends": FieldValue.arrayRemove([friendID])
         ], forDocument: currentUserRef)
-
+        
         let friendRef = db.collection("users").document(friendID)
         batch.updateData([
             "friends": FieldValue.arrayRemove([userID])
@@ -644,12 +648,12 @@ struct SocialView: View {
         batch.commit { error in
             if error == nil {
                 friends.removeAll { $0.id == friendID }
-
+                
                 fetchUserProfiles(userIDs: [friendID]) { profiles in
                     if let profile = profiles.first {
                         if !self.recommendedFriends.contains(where: { $0.id == profile.id }) &&
-                           !self.friendRequests.contains(where: { $0.id == profile.id }) &&
-                           !self.outgoingRequests.contains(profile.id) {
+                            !self.friendRequests.contains(where: { $0.id == profile.id }) &&
+                            !self.outgoingRequests.contains(profile.id) {
                             
                             DispatchQueue.main.async {
                                 self.recommendedFriends.append(profile)
@@ -658,7 +662,7 @@ struct SocialView: View {
                         }
                     }
                 }
-
+                
                 db.collection("friendRequests")
                     .whereField("senderId", in: [userID, friendID])
                     .whereField("receiverId", in: [userID, friendID])
@@ -695,7 +699,7 @@ struct SocialView: View {
             }
     }
 }
-    
+
 
 import SwiftUI
 import FirebaseFirestore
@@ -874,11 +878,11 @@ struct UserProfileView: View {
             
             Text(userID == currentUserID ?
                  "Complete challenges to share your first post!" :
-                 "This user hasn't posted anything yet!")
-                .foregroundColor(.gray)
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                    "This user hasn't posted anything yet!")
+            .foregroundColor(.gray)
+            .font(.subheadline)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 40)
         }
         .padding(.vertical, 40)
     }
