@@ -37,6 +37,7 @@ struct SocialView: View {
     @State private var requestListener: ListenerRegistration?
     @State private var showRemoveFriendAlert = false
     @State private var friendToRemove: UserProfile?
+    @State private var listener: ListenerRegistration?
     
     private let contactStore = CNContactStore()
     
@@ -355,6 +356,7 @@ struct SocialView: View {
                 }
             }
             .onAppear {
+                setupGlobalListeners()
                 setupFriendListener()
                 setupFriendRequestListener()
                 loadRecommendedFriends()
@@ -363,6 +365,7 @@ struct SocialView: View {
                 checkContactsPermission()
             }
             .onDisappear {
+                listener?.remove()
                 friendListener?.remove()
                 requestListener?.remove()
             }
@@ -485,24 +488,67 @@ struct SocialView: View {
     
     private func setupFriendRequestListener() {
         let db = Firestore.firestore()
+        
+        // Listener for incoming requests
         requestListener = db.collection("friendRequests")
             .whereField("receiverId", isEqualTo: userID)
-            .whereField("status", isEqualTo: "pending")
             .addSnapshotListener { snapshot, _ in
-                let senderIDs = snapshot?.documents.compactMap { $0.data()["senderId"] as? String } ?? []
-                fetchUserProfiles(userIDs: senderIDs) {
-                    self.friendRequests = $0
-                    self.loadRecommendedFriends() // Refresh to include these in recommendations
+                guard let documents = snapshot?.documents else { return }
+                
+                let pendingRequests = documents.filter { $0.data()["status"] as? String == "pending" }
+                let senderIDs = pendingRequests.compactMap { $0.data()["senderId"] as? String }
+                
+                fetchUserProfiles(userIDs: senderIDs) { profiles in
+                    self.friendRequests = profiles
+                    self.loadRecommendedFriends()
+                }
+                
+                // Handle accepted/declined requests
+                let handledRequests = documents.filter { $0.data()["status"] as? String != "pending" }
+                handledRequests.forEach { doc in
+                    if let status = doc.data()["status"] as? String {
+                        if status == "accepted" {
+                            // Update UI to show new friend
+                            if let senderId = doc.data()["senderId"] as? String {
+                                self.friends.append(UserProfile(
+                                    id: senderId,
+                                    username: doc.data()["senderName"] as? String ?? "",
+                                    profilePic: ""
+                                ))
+                            }
+                        }
+                        // Remove the request from UI
+                        self.friendRequests.removeAll { $0.id == doc.data()["senderId"] as? String }
+                    }
                 }
             }
         
+        // Listener for outgoing requests
         db.collection("friendRequests")
             .whereField("senderId", isEqualTo: userID)
-            .whereField("status", isEqualTo: "pending")
             .addSnapshotListener { snapshot, _ in
-                self.outgoingRequests = snapshot?.documents.compactMap { $0.data()["receiverId"] as? String } ?? []
+                self.outgoingRequests = snapshot?.documents
+                    .filter { $0.data()["status"] as? String == "pending" }
+                    .compactMap { $0.data()["receiverId"] as? String } ?? []
+                
                 self.loadRecommendedFriends()
             }
+    }
+    
+    private func setupGlobalListeners() {
+        let db = Firestore.firestore()
+        
+        // Remove any existing listener
+        listener?.remove()
+        
+        // Listen for changes to the current user's document
+        listener = db.collection("users").document(userID).addSnapshotListener { document, error in
+            if let document = document, document.exists {
+                // When our user document changes, refresh all data
+                loadFriendRequests()
+                loadRecommendedFriends()
+            }
+        }
     }
     
     private func checkProfilePrivacyBeforeNavigation(user: UserProfile) {
@@ -646,57 +692,137 @@ struct SocialView: View {
         ], forDocument: friendRef)
         
         batch.commit { error in
-            if error == nil {
-                friends.removeAll { $0.id == friendID }
-                
-                fetchUserProfiles(userIDs: [friendID]) { profiles in
-                    if let profile = profiles.first {
-                        if !self.recommendedFriends.contains(where: { $0.id == profile.id }) &&
-                            !self.friendRequests.contains(where: { $0.id == profile.id }) &&
-                            !self.outgoingRequests.contains(profile.id) {
-                            
-                            DispatchQueue.main.async {
-                                self.recommendedFriends.append(profile)
-                                self.recommendedFriends.sort { $0.username < $1.username }
-                            }
-                        }
-                    }
-                }
-                
-                db.collection("friendRequests")
-                    .whereField("senderId", in: [userID, friendID])
-                    .whereField("receiverId", in: [userID, friendID])
-                    .getDocuments { snapshot, _ in
-                        snapshot?.documents.forEach { $0.reference.delete() }
-                    }
-            } else {
-                print("Error removing friend: \(error!.localizedDescription)")
+            if let error = error {
+                print("Error removing friend: \(error.localizedDescription)")
+                return
             }
+            
+            // Delete any friend requests between these users
+            db.collection("friendRequests")
+                .whereField("senderId", in: [userID, friendID])
+                .whereField("receiverId", in: [userID, friendID])
+                .getDocuments { snapshot, _ in
+                    snapshot?.documents.forEach { $0.reference.delete() }
+                }
+            
+            // Send a push notification to the removed friend
+            sendFriendRemovalNotification(to: friendID)
+        }
+    }
+    
+    private func sendFriendRemovalNotification(to friendID: String) {
+        let db = Firestore.firestore()
+        
+        // Get the friend's FCM token
+        db.collection("users").document(friendID).getDocument { document, _ in
+            guard let fcmToken = document?.data()?["fcmToken"] as? String else { return }
+            
+            // Send the notification via Firebase Cloud Messaging
+            let url = URL(string: "https://fcm.googleapis.com/fcm/send")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("key=YOUR_SERVER_KEY", forHTTPHeaderField: "Authorization")
+            
+            let message: [String: Any] = [
+                "to": fcmToken,
+                "notification": [
+                    "title": "Friend Removed",
+                    "body": "\(userViewModel.username) has removed you as a friend",
+                    "sound": "default"
+                ],
+                "data": [
+                    "type": "friendRemoved",
+                    "userId": userID
+                ]
+            ]
+            
+            guard let httpBody = try? JSONSerialization.data(withJSONObject: message, options: []) else {
+                return
+            }
+            
+            request.httpBody = httpBody
+            
+            URLSession.shared.dataTask(with: request) { _, _, error in
+                if let error = error {
+                    print("Error sending notification: \(error)")
+                }
+            }.resume()
         }
     }
     
     private func acceptFriendRequest(from user: UserProfile) {
         let db = Firestore.firestore()
+        let batch = db.batch()
+        
         let currentUserRef = db.collection("users").document(userID)
+        batch.updateData([
+            "friends": FieldValue.arrayUnion([user.id])
+        ], forDocument: currentUserRef)
+        
         let senderRef = db.collection("users").document(user.id)
+        batch.updateData([
+            "friends": FieldValue.arrayUnion([userID])
+        ], forDocument: senderRef)
         
-        currentUserRef.updateData(["friends": FieldValue.arrayUnion([user.id])])
-        senderRef.updateData(["friends": FieldValue.arrayUnion([userID])])
-        
+        // Update the friend request status
         db.collection("friendRequests")
             .whereField("senderId", isEqualTo: user.id)
             .whereField("receiverId", isEqualTo: userID)
             .getDocuments { snapshot, _ in
-                snapshot?.documents.forEach { $0.reference.updateData(["status": "accepted"]) }
+                snapshot?.documents.forEach { doc in
+                    batch.updateData(["status": "accepted"], forDocument: doc.reference)
+                }
                 
-                DispatchQueue.main.async {
-                    friendRequests.removeAll { $0.id == user.id }
-                    if !friends.contains(where: { $0.id == user.id }) {
-                        friends.append(user)
+                batch.commit { error in
+                    if let error = error {
+                        print("Error accepting friend request: \(error)")
+                        return
                     }
-                    recommendedFriends.removeAll { $0.id == user.id }
+                    
+                    // Send push notification to the requester
+                    sendFriendAcceptanceNotification(to: user.id)
                 }
             }
+    }
+    
+    private func sendFriendAcceptanceNotification(to friendID: String) {
+        let db = Firestore.firestore()
+        
+        db.collection("users").document(friendID).getDocument { document, _ in
+            guard let fcmToken = document?.data()?["fcmToken"] as? String else { return }
+            
+            let url = URL(string: "https://fcm.googleapis.com/fcm/send")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.setValue("key=YOUR_SERVER_KEY", forHTTPHeaderField: "Authorization")
+            
+            let message: [String: Any] = [
+                "to": fcmToken,
+                "notification": [
+                    "title": "Friend Request Accepted",
+                    "body": "\(userViewModel.username) accepted your friend request!",
+                    "sound": "default"
+                ],
+                "data": [
+                    "type": "friendRequestAccepted",
+                    "userId": userID
+                ]
+            ]
+            
+            guard let httpBody = try? JSONSerialization.data(withJSONObject: message, options: []) else {
+                return
+            }
+            
+            request.httpBody = httpBody
+            
+            URLSession.shared.dataTask(with: request) { _, _, error in
+                if let error = error {
+                    print("Error sending notification: \(error)")
+                }
+            }.resume()
+        }
     }
 }
 
@@ -800,7 +926,7 @@ struct UserProfileView: View {
         }
     }
     
-    // MARK: - Subviews (unchanged from previous implementation)
+    // MARK: - Subviews
     private var headerView: some View {
         VStack {
             ZStack {
