@@ -143,9 +143,9 @@ struct SocialView: View {
                                                 }) {
                                                     Text("Remove")
                                                         .font(.caption2)
-                                                        .foregroundColor(.red)
+                                                        .foregroundColor(Color.pinkColor)
                                                         .padding(5)
-                                                        .background(Color.red.opacity(0.2))
+                                                        .background(Color.pinkColor.opacity(0.2))
                                                         .cornerRadius(5)
                                                 }
                                             }
