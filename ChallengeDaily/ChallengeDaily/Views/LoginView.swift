@@ -7,10 +7,45 @@ struct LoginView: View {
 
     @State private var email: String = ""
     @State private var password: String = ""
-    @Binding var isPresented: Bool
+    //@Binding var isPresented: Bool
 
     // Added callback to switch to SignupView
-    var onSwitchToSignup: () -> Void
+    //var onSwitchToSignup: () -> Void
+    
+    /*
+     .alert(isPresented: $showAlert) {
+         Alert(
+             title: Text("Notice"), message: Text(alertMessage),
+             dismissButton: .default(Text("OK")))
+     }
+     */
+    
+    
+    // PASSWORD RESET
+    /*
+     guard !email.isEmpty else {
+         alertMessage =
+             "Please enter your email address first."
+         showAlert = true
+         return
+     }
+
+     Auth.auth().sendPasswordReset(withEmail: email) {
+         error in
+         if let error = error {
+             alertMessage = error.localizedDescription
+         } else {
+             alertMessage =
+                 "Password reset email sent! Check your inbox."
+         }
+         showAlert = true
+     }
+     */
+    
+    // SIGN IN
+    /*
+     
+     */
 
     // Alert for password reset
     @State private var showAlert = false
@@ -28,144 +63,131 @@ struct LoginView: View {
         return passwordRegex.evaluate(with: password)
     }
 
+
+    @Environment(\.dismiss) private var dismiss
+    
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case email
+        case password
+    }
+    
     var body: some View {
-        NavigationView {
-            ZStack {
-                Image("appBackground")
-                    .resizable()
-                    .scaledToFill()
-                    .ignoresSafeArea()
-
-                VStack {
-                    Spacer().frame(height: 120)
-
-                    Image(systemName: "target")
-                        .resizable()
-                        .frame(width: 70, height: 70)
-                        .foregroundColor(Color.white)
-
-                    Spacer().frame(height: 10)
-
-                    HStack(spacing: 0) {
-                        Text("Log")
-                            .font(.largeTitle)
-                            .fontWeight(.light)
-                            .foregroundColor(Color.white)
-
-                        Text("In")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color.white)
+        ZStack {
+            Color(red: 24/255, green: 25/255, blue: 27/255)
+                .ignoresSafeArea()
+            
+            VStack(alignment: .leading, spacing: 20) {
+                
+                // MARK: - Custom Back Button + Titles
+                HStack(alignment: .top, spacing: 12) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
                     }
-
-                    Spacer().frame(height: 50)
-
-                    VStack(spacing: 0) {
-                        Spacer().frame(height: 10)
-
-                        VStack {
-                            Text("Email")
-                                .font(.footnote)
-                                .fontWeight(.light)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.white)
-                                .padding(.top)
-                                .padding(.leading)
-
-                            HStack {
-                                TextField("Email", text: $email)
-                                    .foregroundColor(Color.white)
-                                    .disableAutocorrection(true)
-                                    .autocapitalization(.none)
-
-                                Spacer()
-
-                                if !email.isEmpty {
-                                    Image(systemName: "checkmark")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.green)
-                                }
+                    
+                    Spacer()
+                    
+                }
+                .padding(.top, 10)
+                
+                Spacer().frame(height: 20)
+                
+                // MARK: - First Name
+                VStack {
+                    
+                    
+                    Text("Log In")
+                        .foregroundColor(.white)
+                        .font(.system(size: 22, weight: .semibold))
+                    
+                    Spacer().frame(height: 35)
+                    
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("USERNAME, EMAIL, OR PHONE")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 14, weight: .medium))
+                        
+                        TextField("", text: $email)
+                            .font(.body)
+                            .foregroundColor(.white)
+                            .padding(.vertical, 8)
+                            .focused($focusedField, equals: .email)
+                            .submitLabel(.next)
+                            .onSubmit {
+                                focusedField = .password
                             }
-                            .padding(.horizontal)
-                            .padding(.bottom, 1)
+                            .autocapitalization(.none)
+                            .autocorrectionDisabled(true)
+                        
+                        Rectangle()
+                            .frame(height: 1)
+                            .foregroundColor(.gray).opacity(0.7)
+                    }
+                    .padding(.horizontal)
 
-                            Divider()
-                                .background(Color.white)
-                                .frame(height: 1)
-                                .padding(.horizontal)
+                }
+                
+                // MARK: - Last Name
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("PASSWORD")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 14, weight: .medium))
+                    
+                    TextField("", text: $password)
+                        .font(.body)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 8)
+                        .focused($focusedField, equals: .password)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = nil
                         }
-                        .background(Color.clear)
-                        .padding()
-                        .padding(.horizontal)
-
-                        VStack {
-                            Text("Password")
-                                .font(.footnote)
-                                .fontWeight(.light)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .foregroundColor(Color.white)
-                                .padding(.top)
-                                .padding(.leading)
-
-                            HStack {
-                                SecureField("Password", text: $password)
-                                    .foregroundColor(Color.white)
-                                    .disableAutocorrection(true)
-                                    .autocapitalization(.none)
-
-                                Spacer()
-
-                                if !password.isEmpty {
-                                    Image(systemName: "checkmark")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.green)
-                                }
-                            }
-                            .padding(.horizontal)
-                            .padding(.bottom, 1)
-
-                            Divider()
-                                .background(Color.white)
-                                .frame(height: 1)
-                                .padding(.horizontal)
-                        }
-                        .background(Color.clear)
-                        .padding()
-                        .padding(.horizontal)
-
-                        Button(action: {
-                            guard !email.isEmpty else {
-                                alertMessage =
-                                    "Please enter your email address first."
-                                showAlert = true
-                                return
-                            }
-
-                            Auth.auth().sendPasswordReset(withEmail: email) {
-                                error in
-                                if let error = error {
-                                    alertMessage = error.localizedDescription
-                                } else {
-                                    alertMessage =
-                                        "Password reset email sent! Check your inbox."
-                                }
-                                showAlert = true
-                            }
-                        }) {
-                            Text("Forgot Password?")
-                                .font(.footnote)
-                                .fontWeight(.light)
-                                .foregroundColor(Color.gray)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                        }
-                        .padding(.horizontal, 30)
-                        .padding(.top, -10)
-
-                        Spacer().frame(height: 40)
-
-                        Button {
+                        .autocapitalization(.none)
+                        .autocorrectionDisabled(true)
+                    
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(.gray).opacity(0.7)
+                }
+                .padding(.horizontal)
+                
+                HStack{
+                    Image(systemName: "checkmark.square")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text("Save Login Info on your iCloud devices")
+                        .foregroundColor(.white)
+                        .font(.system(size: 13, weight: .regular))
+                }
+                .padding(.horizontal)
+                
+                HStack{
+                    
+                    Spacer()
+                    
+                    Text("Forgot your password?")
+                        .foregroundColor(Color(red: 87/255, green: 200/255, blue: 255/255))
+                        .font(.system(size: 13, weight: .medium))
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(10)
+                
+                // MARK: - Footer
+                VStack {
+                    
+                    // 👇 NavigationLink to Username screen
+                    Button(action:
+                            {
                             Auth.auth().signIn(
-                                withEmail: email, password: password
+                        withEmail: email, password: password
                             ) { authResult, error in
                                 if let error = error {
                                     print(error.localizedDescription)
@@ -173,80 +195,48 @@ struct LoginView: View {
                                     showAlert = true
                                     return
                                 }
-
+                                
                                 if let authResult = authResult {
                                     print(authResult.user.uid)
                                     withAnimation {
                                         userID = authResult.user.uid
-                                        isPresented = false
+                                        //isPresented = false
                                     }
+                                    dismiss()
                                 }
                             }
-                        } label: {
-                            Text("Sign In")
-                                .foregroundColor(canSignIn ? Color.black.opacity(0.6) : Color.white.opacity(0.6))
-                                .font(.subheadline)
-                                .fontWeight(.bold)
+                    },label: {
+                            Text("Log In")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor((email.isEmpty || password.isEmpty) ?
+                                    .white :
+                                    Color(red: 23/255, green: 25/255, blue: 26/255))
                                 .frame(maxWidth: .infinity)
-                                .padding(17)
-                                .background(
-                                    LinearGradient(
-                                        gradient: Gradient(colors: canSignIn ? [Color.tealColor, Color.greenColor] : [Color.gray, Color.gray]),
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 20))
-                                .padding(.horizontal, 100)
+                                .padding()
+                                .background((email.isEmpty || password.isEmpty) ?
+                                            Color(red: 50/255, green: 50/255, blue: 50/255) :
+                                            Color(red: 87/255, green: 200/255, blue: 255/255))
+                                .frame(height: 45)
+                                .cornerRadius(5)
+                                .padding(.horizontal, 40)
                         }
-                        .disabled(!canSignIn)
-
-                    }
-
-                    Spacer().frame(height: 100)
-
-                    Text("Don't have an account?")
-                        .font(.caption)
-                        .fontWeight(.light)
-                        .foregroundColor(Color.gray)
-                        .frame(maxWidth: .infinity, alignment: .center)
-
-                    Button(action: {
-                        isPresented = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            onSwitchToSignup()
-                        }
-                    }) {
-                        Text("Create an Account.")
-                            .font(.footnote)
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.white)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
-
-                    Spacer()
+                    )
+                    .padding(.bottom, 15)
+                    .disabled(email.isEmpty || password.isEmpty)
+                    //.padding(.horizontal)
                 }
-
-                VStack {
-                    HStack {
-                        Button(action: {
-                            isPresented = false
-                        }) {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(20)
-                        }
-                        Spacer()
-                    }
-                    Spacer()
-                }
+                .padding(.top, 50)
+                
+                Spacer()
             }
+            .padding(.horizontal, 30)
         }
-        .alert(isPresented: $showAlert) {
-            Alert(
-                title: Text("Notice"), message: Text(alertMessage),
-                dismissButton: .default(Text("OK")))
+        .navigationBarBackButtonHidden(true)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now()) {
+                focusedField = .email
+            }
         }
     }
 }
+

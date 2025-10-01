@@ -437,3 +437,10 @@ struct SignupView: View {
         return formatter.string(from: Date())
     }
 }
+
+#Preview {
+    NavigationStack {
+        SignupView()
+            .preferredColorScheme(.dark)
+    }
+}

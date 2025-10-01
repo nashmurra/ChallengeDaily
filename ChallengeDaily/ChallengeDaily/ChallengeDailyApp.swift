@@ -11,6 +11,7 @@ import FirebaseCore
 
 @main
 struct ChallengeDailyApp: App {
+    @StateObject var signUpData = SignUpData()
     
     init() {
         
@@ -34,7 +35,8 @@ struct ChallengeDailyApp: App {
     
     var body: some Scene {
         WindowGroup {
-            SplashScreenView()
+            ContentView()
+                .environmentObject(signUpData)
         }
         .modelContainer(sharedModelContainer)
     }
